@@ -1,0 +1,17 @@
+{
+  "name": "garage-games-event-guide",
+  "version": "0.1.0",
+  "description": "Static event guide for Garage Games",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node build.mjs && npx --yes serve dist"
+  },
+  "dependencies": {
+    "marked": "^14.1.4"
+  },
+  "private": true,
+  "type": "module"
+}
