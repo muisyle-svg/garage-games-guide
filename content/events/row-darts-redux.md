@@ -2,8 +2,8 @@
 title: Row Darts Redux
 order: 1
 points: 41.8
-image: row-darts-redux.jpg
-image_alt: Competitor on a rowing machine throwing a dart at a dartboard
+image: row-darts-redux.svg
+image_alt: Animation of a competitor throwing a dart at a dartboard mounted on the sliding seat of a rowing machine
 caption: Same image as last year. More accurate this time.
 wording: paraphrase
 flags:

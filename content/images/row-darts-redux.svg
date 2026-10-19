@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="t">
+  <title id="t">A competitor throws a dart at a dartboard mounted on the sliding seat of a rowing machine</title>
+  <style>
+    /* One 4 s loop. The seat moves linearly so the dart, once stuck, can follow it with matching keyframes. */
+    .seat { animation: seat 4s linear infinite; }
+    @keyframes seat { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(240px); } }
+
+    .arm { transform-box: view-box; transform-origin: 72px 150px; transform: rotate(-20deg); animation: arm 4s ease-in-out infinite; }
+    @keyframes arm {
+      0% { transform: rotate(-20deg); }
+      18% { transform: rotate(-150deg); }
+      25% { transform: rotate(-15deg); }
+      40% { transform: rotate(12deg); }
+      60%, 100% { transform: rotate(-20deg); }
+    }
+    .held { opacity: 0; animation: held 4s steps(1, end) infinite; }
+    @keyframes held { 0% { opacity: 1; } 25%, 100% { opacity: 0; } }
+
+    .dart { transform: translate(200px, 140px) rotate(15deg); animation: dart 4s linear infinite, dart-fade 4s linear infinite; }
+    @keyframes dart {
+      0%, 25% { transform: translate(122px, 135px) rotate(-22deg); }
+      28.75% { transform: translate(189.5px, 95px) rotate(-12deg); }
+      32.5% { transform: translate(257px, 82.5px) rotate(0deg); }
+      36.25% { transform: translate(324.5px, 97.5px) rotate(12deg); }
+      40% { transform: translate(392px, 140px) rotate(15deg); }
+      50% { transform: translate(440px, 140px) rotate(15deg); }
+      100% { transform: translate(200px, 140px) rotate(15deg); }
+    }
+    @keyframes dart-fade { 0%, 24.9% { opacity: 0; } 25%, 92% { opacity: 1; } 97%, 100% { opacity: 0; } }
+
+    .whoosh { opacity: 0; animation: whoosh 4s linear infinite; }
+    @keyframes whoosh { 0%, 26% { opacity: 0; } 30%, 36% { opacity: .55; } 40%, 100% { opacity: 0; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .seat, .arm, .held, .dart, .whoosh { animation: none; }
+    }
+  </style>
+
+  <defs>
+    <pattern id="hazard" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="24" height="24" fill="#1f1d19"/>
+      <rect width="12" height="24" fill="#f2b705"/>
+    </pattern>
+    <symbol id="dart-shape" overflow="visible">
+      <!-- Tip at 0,0 pointing right -->
+      <path d="M0 0 L-9 -2 L-9 2 Z" fill="#c9ccd1"/>
+      <rect x="-26" y="-2.5" width="17" height="5" rx="2" fill="#5a6270"/>
+      <rect x="-36" y="-1.5" width="10" height="3" fill="#8a929e"/>
+      <path d="M-34 0 L-46 -9 L-50 -9 L-42 0 L-50 9 L-46 9 Z" fill="#e2532d"/>
+    </symbol>
+  </defs>
+
+  <!-- Garage wall and floor -->
+  <rect width="640" height="400" fill="#2b2925"/>
+  <g fill="#34312c">
+    <rect x="0" y="40" width="640" height="2"/><rect x="0" y="110" width="640" height="2"/>
+    <rect x="0" y="180" width="640" height="2"/><rect x="0" y="250" width="640" height="2"/>
+  </g>
+  <rect y="340" width="640" height="60" fill="#3a362f"/>
+  <rect y="336" width="640" height="8" fill="url(#hazard)"/>
+
+  <!-- Rowing machine -->
+  <g>
+    <rect x="140" y="296" width="420" height="9" rx="4" fill="#9aa1ab"/>
+    <rect x="146" y="300" width="10" height="38" rx="3" fill="#6c737d"/>
+    <rect x="128" y="332" width="46" height="8" rx="4" fill="#6c737d"/>
+    <!-- foot stretcher -->
+    <path d="M522 296 L536 254 L550 258 L540 298 Z" fill="#4c525a"/>
+    <!-- flywheel housing and monitor -->
+    <circle cx="588" cy="282" r="40" fill="#1f1d19" stroke="#4c525a" stroke-width="6"/>
+    <circle cx="588" cy="282" r="12" fill="#4c525a"/>
+    <rect x="566" y="318" width="44" height="22" rx="4" fill="#4c525a"/>
+    <path d="M588 244 L566 190" stroke="#6c737d" stroke-width="6" stroke-linecap="round"/>
+    <rect x="548" y="168" width="34" height="26" rx="4" fill="#1f1d19" stroke="#6c737d" stroke-width="3"/>
+    <rect x="553" y="173" width="24" height="16" rx="2" fill="#3f8f6a"/>
+  </g>
+
+  <!-- Seat with the dartboard mounted on it; slides along the rail -->
+  <g class="seat">
+    <circle cx="186" cy="294" r="5" fill="#1f1d19"/><circle cx="214" cy="294" r="5" fill="#1f1d19"/>
+    <rect x="176" y="278" width="48" height="13" rx="6" fill="#d8d2c4"/>
+    <rect x="196" y="203" width="8" height="77" fill="#8a929e"/>
+    <g transform="translate(200 145)">
+      <circle r="58" fill="#1f1d19"/>
+      <circle r="46" fill="#f3e7c9"/>
+      <circle r="38" fill="#c0392b"/>
+      <circle r="30" fill="#f3e7c9"/>
+      <circle r="21" fill="#2e7d4f"/>
+      <circle r="13" fill="#f3e7c9"/>
+      <circle r="6" fill="#c0392b"/>
+      <g stroke="#1f1d19" stroke-width="1.5" opacity=".55">
+        <path d="M-46 0 H46 M0 -46 V46 M-32.5 -32.5 L32.5 32.5 M-32.5 32.5 L32.5 -32.5"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Motion trail during the throw -->
+  <path class="whoosh" d="M130 128 Q 260 60 380 128" fill="none" stroke="#f3efe6" stroke-width="2" stroke-dasharray="4 10" stroke-linecap="round"/>
+
+  <!-- The thrower -->
+  <g stroke="#f2b705" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M70 160 L68 245"/>                 <!-- torso -->
+    <path d="M68 245 L50 290 L44 336"/>         <!-- back leg -->
+    <path d="M68 245 L90 288 L96 336"/>         <!-- front leg -->
+    <path d="M70 168 L52 200 L40 228"/>         <!-- off arm -->
+  </g>
+  <circle cx="72" cy="128" r="20" fill="#f2b705"/>
+  <path d="M84 120 h8" stroke="#1f1d19" stroke-width="3" stroke-linecap="round"/>
+  <g class="arm">
+    <path d="M72 150 L100 150 L122 150" stroke="#f2b705" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <use href="#dart-shape" class="held" transform="translate(134 150)"/>
+  </g>
+
+  <!-- The thrown dart (tip lands on the board, then rides along with it) -->
+  <g class="dart"><use href="#dart-shape"/></g>
+</svg>
