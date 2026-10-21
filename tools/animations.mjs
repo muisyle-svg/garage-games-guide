@@ -85,6 +85,35 @@ ${goggles ? `<path d="M-17 124 h38" stroke="${C.ink}" stroke-width="4"/><rect x=
 const arm = (len = 50, extra = '') =>
   `<path d="M2 150 H${2 + len}" stroke="${C.yellow}" stroke-width="10" stroke-linecap="round" fill="none"/>${extra}`;
 
+// A two-part arm (upper arm + forearm) whose hand follows a path, solved with simple inverse kinematics.
+// frames: [[percent, dx, dy], ...] = hand position relative to the shoulder in the figure's own (facing-right) space.
+function arm2(name, frames, { L1 = 50, L2 = 50, timing = 'ease-in-out', hand = '' } = {}) {
+  const deg = r => (r * 180) / Math.PI;
+  let prev = null;
+  const solved = frames.map(([p, dx, dy]) => {
+    let d = Math.hypot(dx, dy);
+    d = Math.min(Math.max(d, Math.abs(L1 - L2) + 0.5), L1 + L2 - 0.5);
+    const th = Math.atan2(dy, dx), c = (d * d - L1 * L1 - L2 * L2) / (2 * L1 * L2);
+    // Of the two elbow solutions, keep the one with the elbow lower down (more natural).
+    const [best] = [1, -1].map(sg => {
+      const a2 = sg * Math.acos(Math.max(-1, Math.min(1, c)));
+      const a1 = th - Math.atan2(L2 * Math.sin(a2), L1 + L2 * Math.cos(a2));
+      return { a1: deg(a1), a2: deg(a2), ey: Math.sin(a1) };
+    }).sort((a, b) => b.ey - a.ey);
+    if (prev) { // keep angles continuous so the arm never spins the long way round
+      while (best.a1 - prev.a1 > 180) best.a1 -= 360;
+      while (best.a1 - prev.a1 < -180) best.a1 += 360;
+    }
+    prev = best;
+    return [p, best.a1, best.a2];
+  });
+  const css = kf(`${name}u`, solved.map(([p, a1]) => [p, rot(a1)]), { timing, origin: '2px 150px' })
+    + kf(`${name}f`, solved.map(([p, , a2]) => [p, rot(a2)]), { timing, origin: `${2 + L1}px 150px` });
+  const stroke = `stroke="${C.yellow}" stroke-width="10" stroke-linecap="round" fill="none"`;
+  const svgArm = `<g class="a ${name}u"><path d="M2 150 H${2 + L1}" ${stroke}/><g class="a ${name}f"><path d="M${2 + L1} 150 H${2 + L1 + L2}" ${stroke}/><circle cx="${2 + L1 + L2}" cy="150" r="7" fill="${C.yellow}"/>${hand}</g></g>`;
+  return { css, svg: svgArm };
+}
+
 const scenes = {};
 
 // ---------- Four Hand: four forehand throws, one from behind each line, into a disc golf basket ----------
@@ -192,72 +221,83 @@ scenes['row-darts-iii'] = () => {
   });
 };
 
-// ---------- Wall-D: a disc on the wall grid lights up and its coordinates are keyed in ----------
+// ---------- Wall-D: a disc on the wall grid lights up and the competitor keys in its coordinates ----------
 scenes['wall-d'] = () => {
   const dur = 6, rows = 'ABCD', palette = [C.orange, C.blue, C.green, C.purple, C.red, C.cream, C.yellow];
-  const cx = c => 186 + 29 * (c - 1), cy = r => 78 + 58 * r;
+  const cx = c => 216 + 26.5 * (c - 1), cy = r => 78 + 58 * r;
   let grid = '';
   for (let r = 0; r < 4; r++) {
-    grid += `<text class="label" x="166" y="${cy(r) + 5}" text-anchor="middle">${rows[r]}</text>`;
-    for (let c = 1; c <= 15; c++) grid += `<circle cx="${cx(c)}" cy="${cy(r)}" r="12" fill="${palette[(r * 7 + c * 3) % palette.length]}"/><circle cx="${cx(c)}" cy="${cy(r)}" r="4" fill="${C.ink}" opacity=".25"/>`;
+    grid += `<text class="label" x="200" y="${cy(r) + 5}" text-anchor="middle">${rows[r]}</text>`;
+    for (let c = 1; c <= 15; c++) grid += `<circle cx="${cx(c)}" cy="${cy(r)}" r="11" fill="${palette[(r * 7 + c * 3) % palette.length]}"/><circle cx="${cx(c)}" cy="${cy(r)}" r="3.5" fill="${C.ink}" opacity=".25"/>`;
   }
   for (let c = 1; c <= 15; c++) grid += `<text class="label" x="${cx(c)}" y="50" text-anchor="middle" style="font-size:11px">${c}</text>`;
   const keys = [['1', '2', '3', 'A'], ['4', '5', '6', 'B'], ['7', '8', '9', 'C'], ['*', '0', '#', 'D']];
-  const kx = c => 46 + 24 * c, ky = r => 214 + 24 * r;
-  let pad = `<rect x="30" y="198" width="104" height="104" rx="8" fill="${C.ink}" stroke="${C.grey}" stroke-width="3"/>`;
+  const kx = c => 70 + 22 * c, ky = r => 142 + 22 * r;
+  let pad = `<rect x="56" y="128" width="94" height="92" rx="8" fill="${C.ink}" stroke="${C.grey}" stroke-width="3"/>`;
   keys.forEach((row, r) => row.forEach((k, c) => {
-    pad += `<rect x="${kx(c) - 10}" y="${ky(r) - 10}" width="20" height="20" rx="4" fill="${/[A-D]/.test(k) ? C.red : C.grey}"/><text x="${kx(c)}" y="${ky(r) + 4.5}" text-anchor="middle" style="font:700 12px system-ui,sans-serif;fill:${C.white}">${k}</text>`;
+    pad += `<rect x="${kx(c) - 9}" y="${ky(r) - 9}" width="18" height="18" rx="4" fill="${/[A-D]/.test(k) ? C.red : C.grey}"/><text x="${kx(c)}" y="${ky(r) + 4}" text-anchor="middle" style="font:700 11px system-ui,sans-serif;fill:${C.white}">${k}</text>`;
   }));
   const presses = [[3, 0, 22], [1, 1, 36], [0, 3, 50]]; // [col, row, percent] for A, 5, *
   let css = windows('pulse', [[8, 92]]);
   css += kf('ring', [[0, 'transform:scale(1)'], [50, 'transform:scale(1.25)'], [100, 'transform:scale(1)']], { timing: 'ease-in-out', origin: `${cx(5)}px ${cy(0)}px` });
-  presses.forEach(([c, r, p], i) => { css += windows(`k${i}`, [[p, p + 4]], { on: 0.85 }); pad += `<rect class="a k${i}" x="${kx(c) - 11}" y="${ky(r) - 11}" width="22" height="22" rx="5" fill="${C.yellow}" opacity="0"/>`; });
-  const fx = [[0, 180, 360]];
-  presses.forEach(([c, r, p]) => fx.push([p - 5, kx(c) + 2, ky(r) + 2], [p, kx(c), ky(r)], [p + 4, kx(c) + 2, ky(r) + 2]));
-  fx.push([62, 180, 360], [100, 180, 360]);
-  css += kf('finger', fx.map(([p, x, y]) => [p, tr(x, y)]), { timing: 'ease-in-out' });
-  css += windows('t1', [[24, 38]]) + windows('t2', [[38, 52]]) + windows('ok', [[52, 96]]) + windows('find', [[0, 52]]);
+  presses.forEach(([c, r, p], i) => { css += windows(`k${i}`, [[p, p + 4]], { on: 0.85 }); pad += `<rect class="a k${i}" x="${kx(c) - 10}" y="${ky(r) - 10}" width="20" height="20" rx="5" fill="${C.yellow}" opacity="0"/>`; });
+  // The competitor stands right of the keypad, facing it (mirrored), so local x runs leftwards.
+  const px = 172, local = (x, y) => [px - x - 2, y - 150];
+  const rest = [20, 70];
+  const hf = [[0, ...rest]];
+  presses.forEach(([c, r, p]) => {
+    const [hx, hy] = local(kx(c), ky(r));
+    hf.push([p - 5, hx - 6, hy - 8], [p, hx, hy], [p + 4, hx - 6, hy - 8]);
+  });
+  hf.push([62, ...rest], [100, ...rest]);
+  const a = arm2('typing', hf, { L1: 58, L2: 58 });
+  css += a.css;
+  css += windows('find', [[0, 24]]) + windows('t1', [[24, 38]]) + windows('t2', [[38, 52]]) + windows('ok', [[52, 96]]);
   return svg({
-    title: 'A disc on the wall grid is highlighted, and its row and column are entered on a keypad',
+    title: 'A disc on the wall grid is highlighted, and the competitor enters its row and column on a keypad',
     dur, css,
     body: `${room()}
-<rect x="152" y="30" width="472" height="268" rx="6" fill="#24221f" stroke="${C.wallLine}" stroke-width="3"/>
+<rect x="186" y="30" width="440" height="268" rx="6" fill="#24221f" stroke="${C.wallLine}" stroke-width="3"/>
 ${grid}
-<g class="a pulse"><circle class="a ring" cx="${cx(5)}" cy="${cy(0)}" r="19" fill="none" stroke="${C.yellow}" stroke-width="5"/></g>
-<rect x="24" y="40" width="116" height="80" rx="6" fill="${C.ink}" stroke="${C.steelDark}" stroke-width="4"/>
-<g class="a find"><text class="label" x="82" y="70" text-anchor="middle">FIND</text><circle cx="82" cy="94" r="12" fill="${palette[(0 * 7 + 5 * 3) % palette.length]}"/></g>
-<g class="a ok"><text x="82" y="88" text-anchor="middle" style="font:800 16px system-ui,sans-serif;fill:${C.green}">COMPLETE</text></g>
-<rect x="30" y="150" width="104" height="38" rx="6" fill="#132018" stroke="${C.grey}" stroke-width="3"/>
-<g style="font:800 20px ui-monospace,monospace;fill:#7ee2a8">
-<text class="a t1" x="82" y="176" text-anchor="middle">A</text><text class="a t2" x="82" y="176" text-anchor="middle">A5</text><text class="a ok" x="82" y="176" text-anchor="middle">A5 ✓</text>
+<g class="a pulse"><circle class="a ring" cx="${cx(5)}" cy="${cy(0)}" r="17" fill="none" stroke="${C.yellow}" stroke-width="5"/></g>
+<rect x="24" y="24" width="132" height="82" rx="6" fill="${C.ink}" stroke="${C.steelDark}" stroke-width="4"/>
+<g class="a find"><text class="label" x="90" y="54" text-anchor="middle">FIND</text><circle cx="90" cy="80" r="12" fill="${palette[(0 * 7 + 5 * 3) % palette.length]}"/></g>
+<g style="font:800 24px ui-monospace,monospace;fill:#7ee2a8">
+<text class="a t1" x="90" y="74" text-anchor="middle" opacity="0">A</text><text class="a t2" x="90" y="74" text-anchor="middle" opacity="0">A5</text>
 </g>
+<g class="a ok" opacity="0"><text x="90" y="62" text-anchor="middle" style="font:800 22px ui-monospace,monospace;fill:#7ee2a8">A5 ✓</text><text x="90" y="88" text-anchor="middle" style="font:800 13px system-ui,sans-serif;fill:${C.green}">COMPLETE</text></g>
 ${pad}
-<rect x="76" y="302" width="12" height="36" fill="${C.grey}"/>
-<g class="a finger"><path d="M0 0 L30 120" stroke="${C.yellow}" stroke-width="12" stroke-linecap="round"/><circle r="7" fill="${C.yellow}"/></g>`,
+<rect x="97" y="220" width="12" height="118" fill="${C.grey}"/><rect x="84" y="330" width="38" height="8" rx="3" fill="${C.grey}"/>
+<g transform="translate(${px} 0) scale(-1 1)">${figure({ offArm: true })}${a.svg}</g>`,
   });
 };
 
-// ---------- Measure Up: the tape retracts and is locked with its end between two lines ----------
+// ---------- Measure Up: kneeling by the tape, releasing the lock and locking it with the end between two lines ----------
 scenes['measure-up'] = () => {
   const dur = 5, full = 410, stopAt = 346, scale = (stopAt - 150) / full;
   let css = kf('blade', [[0, 'transform:scaleX(1)'], [15, 'transform:scaleX(1)'], [45, `transform:scaleX(${scale.toFixed(3)})`], [80, `transform:scaleX(${scale.toFixed(3)})`], [95, 'transform:scaleX(1)'], [100, 'transform:scaleX(1)']], { timing: 'ease-in', origin: '150px 0px' });
   css += kf('hook', [[0, tr(0, 0)], [15, tr(0, 0)], [45, tr(stopAt - 560, 0)], [80, tr(stopAt - 560, 0)], [95, tr(0, 0)], [100, tr(0, 0)]], { timing: 'ease-in' });
-  css += kf('hand', [[0, tr(0, -16)], [12, tr(0, -16)], [15, tr(0, 0)], [19, tr(0, -16)], [42, tr(0, -16)], [45, tr(0, 0)], [50, tr(0, -16)], [100, tr(0, -16)]], { timing: 'ease-in-out' });
   css += windows('locked', [[45, 80]]);
+  // Kneeling competitor behind the tape body; hand hovers over the lock button and presses it twice.
+  const ox = 34, oy = 85, local = (x, y) => [x - ox - 2, y - oy - 150];
+  const up = local(111, 296), down = local(111, 312);
+  const a = arm2('press', [[0, ...up], [12, ...up], [15, ...down], [19, ...up], [42, ...up], [45, ...down], [50, ...up], [100, ...up]], { L1: 58, L2: 58 });
+  css += a.css;
   return svg({
-    title: 'A hand releases a tape measure lock and locks it again when the end stops between two lines on the floor',
+    title: 'A kneeling competitor releases a tape measure lock and locks it again when the end stops between two lines on the floor',
     dur, css,
     body: `${room()}
 <rect x="574" y="350" width="5" height="46" fill="${C.white}" opacity=".85"/>
 <rect x="330" y="350" width="34" height="46" fill="${C.green}" opacity=".25"/>
 <rect x="330" y="350" width="4" height="46" fill="${C.white}"/><rect x="360" y="350" width="4" height="46" fill="${C.white}"/>
+<g transform="translate(${ox} ${oy})">${figure({ legs: 'kneel', offArm: true })}</g>
 <g class="a blade"><rect x="150" y="364" width="${full}" height="7" fill="#e8c547"/><path d="M150 367.5 H560" stroke="${C.ink}" stroke-width="3" stroke-dasharray="1.5 9" opacity=".7"/></g>
 <g class="a hook"><rect x="558" y="358" width="6" height="16" rx="1" fill="${C.steelDark}"/></g>
 <rect x="76" y="324" width="78" height="52" rx="12" fill="${C.yellow}" stroke="${C.ink}" stroke-width="3"/>
 <circle cx="110" cy="350" r="13" fill="${C.ink}" opacity=".85"/><circle cx="110" cy="350" r="5" fill="${C.steelDark}"/>
 <rect x="98" y="314" width="26" height="12" rx="3" fill="${C.red}"/>
 <g class="a locked"><circle cx="140" cy="334" r="4" fill="${C.green}"/></g>
-<g class="a hand"><path d="M40 170 L104 300" stroke="${C.yellow}" stroke-width="12" stroke-linecap="round"/><circle cx="108" cy="306" r="8" fill="${C.yellow}"/></g>`,
+<g transform="translate(${ox} ${oy})">${a.svg}</g>`,
   });
 };
 
@@ -282,7 +322,7 @@ scenes['paddle-peril'] = () => {
   });
 };
 
-// ---------- Sort & Sweet: four of each candy moved from the big bowl into its own small bowl ----------
+// ---------- Sort & Sweet: the competitor, behind the table, sorts four of each candy into its own small bowl ----------
 scenes['sort-and-sweet'] = () => {
   const dur = 10, table = 250;
   const bowls = [110, 195, 445, 530];
@@ -295,32 +335,37 @@ scenes['sort-and-sweet'] = () => {
   const tint = [C.red, C.purple, C.orange, C.green];
   let seed = 7; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
   let css = '', pieces = '';
-  const handF = [[0, tr(320, 120)]];
+  const hand = [[0, 320, 196]]; // [percent, x, y] of the hand in the scene
   let n = 0;
   for (let k = 0; k < 4; k++) for (let t = 0; t < 4; t++) {
     const sx = 262 + rnd() * 116, sy = 194 + rnd() * 12, ex = bowls[t] - 18 + k * 12, ey = 216;
     const s = 4 + n * 5;
-    css += kf(`c${n}`, [[0, tr(sx, sy)], [s, tr(sx, sy)], [s + 2, tr((sx + ex) / 2, 140)], [s + 4, tr(ex, ey)], [100, tr(ex, ey)]], { timing: 'ease-in-out' });
-    handF.push([s - 1.5, tr(sx, sy - 6)], [s, tr(sx, sy - 6)], [s + 2, tr((sx + ex) / 2, 134)], [s + 4, tr(ex, ey - 6)]);
+    css += kf(`c${n}`, [[0, tr(sx, sy)], [s, tr(sx, sy)], [s + 2, tr((sx + ex) / 2, 160)], [s + 4, tr(ex, ey)], [100, tr(ex, ey)]], { timing: 'ease-in-out' });
+    hand.push([s - 1.5, sx, sy - 4], [s, sx, sy - 4], [s + 2, (sx + ex) / 2, 156], [s + 4, ex, ey - 4]);
     pieces += `<g class="a c${n}">${candy[t](tint[(k + t) % 4])}</g>`;
     n++;
   }
-  handF.push([90, tr(320, 120)], [100, tr(320, 120)]);
-  css += kf('hand', handF, { timing: 'ease-in-out' });
+  hand.push([90, 320, 196], [100, 320, 196]);
+  // The competitor side-steps behind the table to stay just left of the hand.
+  const reach = 56;
+  css += kf('step', hand.map(([p, x]) => [p, tr(x - reach, 0)]), { timing: 'ease-in-out' });
+  const a = arm2('sort', hand.map(([p, , y]) => [p, reach - 2, y - 150]), { L1: 48, L2: 48 });
+  css += a.css;
   css += windows('fade', [[0, 96]]);
   let decoys = '';
   for (let d = 0; d < 8; d++) decoys += `<g transform="translate(${(262 + rnd() * 116).toFixed(1)} ${(196 + rnd() * 10).toFixed(1)})">${candy[d % 4](tint[d % 4])}</g>`;
   const smallBowl = x => `<path d="M${x - 34} 222 H${x + 34} Q${x + 30} ${table} ${x} ${table} Q${x - 30} ${table} ${x - 34} 222 Z" fill="${C.cream}" stroke="${C.ink}" stroke-width="2"/>`;
   return svg({
-    title: 'Candy is sorted out of a big bowl into four small bowls, four of the same candy in each',
+    title: 'Standing behind a table, a competitor sorts candy out of a big bowl into four small bowls, four of the same candy in each',
     dur, css,
     body: `${room()}
+<g class="a step">${figure({ legs: 'walk' })}</g>
 <rect x="50" y="${table}" width="540" height="12" rx="3" fill="${C.wood}"/>
 <rect x="70" y="262" width="12" height="74" fill="${C.woodDark}"/><rect x="558" y="262" width="12" height="74" fill="${C.woodDark}"/>
 ${decoys}<g class="a fade">${pieces}</g>
 <path d="M240 204 H400 Q395 ${table} 320 ${table} Q245 ${table} 240 204 Z" fill="${C.blue}" stroke="${C.ink}" stroke-width="2"/>
 ${bowls.map(smallBowl).join('')}
-<g class="a hand"><path d="M0 -6 L-10 -240" stroke="${C.yellow}" stroke-width="12" stroke-linecap="round"/><circle cy="-8" r="9" fill="${C.yellow}"/></g>`,
+<g class="a step">${a.svg}</g>`,
   });
 };
 

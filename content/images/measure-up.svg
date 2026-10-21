@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="t">
-<title id="t">A hand releases a tape measure lock and locks it again when the end stops between two lines on the floor</title>
+<title id="t">A kneeling competitor releases a tape measure lock and locks it again when the end stops between two lines on the floor</title>
 <style>
 .a{animation-duration:5s;animation-iteration-count:infinite;animation-timing-function:linear}
 .stride,.stride2{animation:stride .6s ease-in-out infinite alternate;transform-origin:-2px 245px}
 .stride2{animation-delay:-.6s}
 @keyframes stride{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
 .label{font:700 13px system-ui,sans-serif;fill:#f3efe6}
-.blade{animation-name:blade;animation-timing-function:ease-in;transform-origin:150px 0px;}@keyframes blade{0%{transform:scaleX(1)}15%{transform:scaleX(1)}45%{transform:scaleX(0.478)}80%{transform:scaleX(0.478)}95%{transform:scaleX(1)}100%{transform:scaleX(1)}}.hook{animation-name:hook;animation-timing-function:ease-in;}@keyframes hook{0%{transform:translate(0px,0px)}15%{transform:translate(0px,0px)}45%{transform:translate(-214px,0px)}80%{transform:translate(-214px,0px)}95%{transform:translate(0px,0px)}100%{transform:translate(0px,0px)}}.hand{animation-name:hand;animation-timing-function:ease-in-out;}@keyframes hand{0%{transform:translate(0px,-16px)}12%{transform:translate(0px,-16px)}15%{transform:translate(0px,0px)}19%{transform:translate(0px,-16px)}42%{transform:translate(0px,-16px)}45%{transform:translate(0px,0px)}50%{transform:translate(0px,-16px)}100%{transform:translate(0px,-16px)}}.locked{animation-name:locked;animation-timing-function:steps(1,end);}@keyframes locked{0%{opacity:0}45%{opacity:1}80%{opacity:0}100%{opacity:0}}
+.blade{animation-name:blade;animation-timing-function:ease-in;transform-origin:150px 0px;}@keyframes blade{0%{transform:scaleX(1)}15%{transform:scaleX(1)}45%{transform:scaleX(0.478)}80%{transform:scaleX(0.478)}95%{transform:scaleX(1)}100%{transform:scaleX(1)}}.hook{animation-name:hook;animation-timing-function:ease-in;}@keyframes hook{0%{transform:translate(0px,0px)}15%{transform:translate(0px,0px)}45%{transform:translate(-214px,0px)}80%{transform:translate(-214px,0px)}95%{transform:translate(0px,0px)}100%{transform:translate(0px,0px)}}.locked{animation-name:locked;animation-timing-function:steps(1,end);}@keyframes locked{0%{opacity:0}45%{opacity:1}80%{opacity:0}100%{opacity:0}}.pressu{animation-name:pressu;animation-timing-function:ease-in-out;transform-origin:2px 150px;}@keyframes pressu{0%{transform:rotate(72.67deg)}12%{transform:rotate(72.67deg)}15%{transform:rotate(67.84deg)}19%{transform:rotate(72.67deg)}42%{transform:rotate(72.67deg)}45%{transform:rotate(67.84deg)}50%{transform:rotate(72.67deg)}100%{transform:rotate(72.67deg)}}.pressf{animation-name:pressf;animation-timing-function:ease-in-out;transform-origin:60px 150px;}@keyframes pressf{0%{transform:rotate(-67.1deg)}12%{transform:rotate(-67.1deg)}15%{transform:rotate(-44.17deg)}19%{transform:rotate(-67.1deg)}42%{transform:rotate(-67.1deg)}45%{transform:rotate(-44.17deg)}50%{transform:rotate(-67.1deg)}100%{transform:rotate(-67.1deg)}}
 @media (prefers-reduced-motion: reduce){*{animation:none!important}}
 </style>
 <defs>
@@ -21,11 +21,17 @@
 <rect x="574" y="350" width="5" height="46" fill="#f3efe6" opacity=".85"/>
 <rect x="330" y="350" width="34" height="46" fill="#2e9d5f" opacity=".25"/>
 <rect x="330" y="350" width="4" height="46" fill="#f3efe6"/><rect x="360" y="350" width="4" height="46" fill="#f3efe6"/>
+<g transform="translate(34 85)"><g stroke="#f2b705" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none">
+<path d="M0 160 L-2 245"/><path d="M-2 245 L-28 281 L-62 281"/><path d="M-2 245 L36 250 L38 281"/><path d="M0 168 L-18 200 L-30 228"/>
+</g>
+<circle cx="2" cy="128" r="20" fill="#f2b705"/>
+<path d="M14 120 h8" stroke="#1f1d19" stroke-width="3" stroke-linecap="round"/>
+</g>
 <g class="a blade"><rect x="150" y="364" width="410" height="7" fill="#e8c547"/><path d="M150 367.5 H560" stroke="#1f1d19" stroke-width="3" stroke-dasharray="1.5 9" opacity=".7"/></g>
 <g class="a hook"><rect x="558" y="358" width="6" height="16" rx="1" fill="#6c737d"/></g>
 <rect x="76" y="324" width="78" height="52" rx="12" fill="#f2b705" stroke="#1f1d19" stroke-width="3"/>
 <circle cx="110" cy="350" r="13" fill="#1f1d19" opacity=".85"/><circle cx="110" cy="350" r="5" fill="#6c737d"/>
 <rect x="98" y="314" width="26" height="12" rx="3" fill="#c0392b"/>
 <g class="a locked"><circle cx="140" cy="334" r="4" fill="#2e9d5f"/></g>
-<g class="a hand"><path d="M40 170 L104 300" stroke="#f2b705" stroke-width="12" stroke-linecap="round"/><circle cx="108" cy="306" r="8" fill="#f2b705"/></g>
+<g transform="translate(34 85)"><g class="a pressu"><path d="M2 150 H60" stroke="#f2b705" stroke-width="10" stroke-linecap="round" fill="none"/><g class="a pressf"><path d="M60 150 H118" stroke="#f2b705" stroke-width="10" stroke-linecap="round" fill="none"/><circle cx="118" cy="150" r="7" fill="#f2b705"/></g></g></g>
 </svg>
