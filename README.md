@@ -27,7 +27,7 @@ image: wall-d.svg      # file in content/images/
 
 - Use only the headings you have text for; empty sections are left out.
 - Scoring is shown as badges under the title, built from `points`, `grace_period` (stopwatch), `points_per_second` (falling arrow) and `finish: auto` (auto-stop badge). `points_label` adds a "per hit" badge (the bonus round uses this).
-- Additional rules start collapsed; the others start open. Every page has an "Expand all" button.
+- Sections appear in this order: Objective, Gameplay, Additional guidelines and clarifications, then Setup/Reset (collapsed). Every page has an "Expand all" button.
 - Optional fields: `subtitle` (small label above the title), `bonus: true` (shows a Bonus badge instead of points), `image_alt` (otherwise the objective is used).
 
 The homepage steps, the "How it works" page and the general rules are in `content/site.md`.

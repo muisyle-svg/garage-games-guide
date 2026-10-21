@@ -14,11 +14,12 @@ const OUT = path.join(ROOT, 'dist');
 const EXPLICIT_INDEX = process.argv.includes('--explicit-index');
 
 // The fixed section order every event page follows.
+// `aliases` are other "## " headings an event file may use for the same section.
 const SECTIONS = [
   { key: 'objective', heading: 'Objective', open: true },
-  { key: 'setup', heading: 'Setup', open: true },
   { key: 'gameplay', heading: 'Gameplay', open: true },
-  { key: 'additional-rules', heading: 'Additional rules', open: false },
+  { key: 'additional-rules', heading: 'Additional guidelines and clarifications', open: true, aliases: ['additional-guidelines-and-clarifications'] },
+  { key: 'setup', heading: 'Setup/Reset', open: false, aliases: ['setup-reset', 'reset'] },
 ];
 
 // ---------- content parsing ----------
@@ -86,12 +87,12 @@ async function loadEvents() {
     if (!data.title) throw new Error(`${f}: missing title`);
     const slug = data.slug || path.basename(f, '.md');
     const parts = splitSections(body);
-    const known = new Map(SECTIONS.map(s => [s.key, s]));
+    const known = new Map(SECTIONS.flatMap(s => [s.key, ...(s.aliases || [])].map(k => [k, s])));
     const sections = SECTIONS.map(s => ({ ...s, md: null }));
     const extra = [];
     for (const p of parts) {
       const key = p.heading ? slugify(p.heading) : null;
-      const target = key && known.has(key) ? sections.find(s => s.key === key) : null;
+      const target = key && known.has(key) ? sections.find(s => s.key === known.get(key).key) : null;
       if (target) target.md = p.md.trim();
       else if (p.heading) extra.push({ key, heading: p.heading, md: p.md.trim(), open: false });
       else console.warn(`${f}: text before the first "## " heading is ignored`);
