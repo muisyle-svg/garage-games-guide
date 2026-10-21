@@ -11,7 +11,7 @@ slideshow: discs
 
 ## Objective
 
-Input the coordinates of the announced discs on the keypad.
+Using the keypad, enter the coordinates of the disc indicated on the TV screen.
 
 ## Setup
 
