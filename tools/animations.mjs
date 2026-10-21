@@ -448,18 +448,32 @@ scenes['bocce-the-moon'] = () => {
   let board = `<path d="M${320 - half(0)} ${farY - 8} H${320 + half(0)} L${320 + half(1)} ${nearY + 10} H${320 - half(1)} Z" fill="${C.wood}" stroke="${C.woodDark}" stroke-width="4" stroke-linejoin="round"/>`;
   holes.forEach(([t, label, ring]) => {
     const y = at(t), k = size(t);
-    board += `<ellipse cx="320" cy="${y}" rx="${17 * k}" ry="${8 * k}" fill="${ring}"/><ellipse cx="320" cy="${y}" rx="${11 * k}" ry="${5 * k}" fill="${C.ink}"/>`
-      + `<text x="${320 + half(t) * 0.55}" y="${y + 6 * k}" text-anchor="middle" style="font:800 ${(20 * k).toFixed(1)}px system-ui,sans-serif;fill:${C.ink}" opacity=".75">${label}</text>`;
+    board += `<ellipse cx="320" cy="${y}" rx="${34 * k}" ry="${15 * k}" fill="${ring}"/><ellipse cx="320" cy="${y}" rx="${26 * k}" ry="${11 * k}" fill="${C.ink}"/>`
+      + `<text x="${320 + half(t) * 0.62}" y="${y + 6 * k}" text-anchor="middle" style="font:800 ${(20 * k).toFixed(1)}px system-ui,sans-serif;fill:${C.ink}" opacity=".75">${label}</text>`;
   });
   // The rods pivot together at the far end; spreading the handles widens the gap so the ball rolls toward the player.
   // One smooth open rolls the ball the whole way up; the rods close again after it drops.
-  const spread = [[0, 0], [8, 0], [60, 6], [68, 6], [86, 0], [100, 0]];
-  let css = kf('lrod', spread.map(([p, a]) => [p, rot(a)]), { timing: 'ease-in-out', origin: `316px ${farY - 4}px` });
-  css += kf('rrod', spread.map(([p, a]) => [p, rot(-a)]), { timing: 'ease-in-out', origin: `324px ${farY - 4}px` });
-  const ts = [[0, 0.04], [8, 0.04], [58, 0.9], [100, 0.9]];
-  css += kf('ball', ts.map(([p, t]) => [p, tr(0, at(t), `scale(${size(t).toFixed(3)})`)]), { timing: 'ease-in-out' });
+  // The ball (radius R before perspective) rests across both rods. Where the gap between them is narrower
+  // than the ball it rides on top; spreading the rods lets it roll up toward the player, and at the 100 hole
+  // the gap finally opens wider than the ball and it drops through.
+  const R = 24, pivotY = farY - 4;
+  const gap0 = y => 8 + 32 * (y - pivotY) / (nearY + 22 - pivotY); // closed gap between the rods at height y
+  const angleFor = (t, fit) => Math.max(0, (fit * 2 * R * size(t) - gap0(at(t))) / (2 * (at(t) - pivotY))) * 180 / Math.PI;
+  const ease = u => u * u * (3 - 2 * u);
+  const ball = [[0, 0.04]], spread = [[0, 0]], open = angleFor(0.9, 1.08);
+  for (let p = 8; p <= 58; p += 2) {
+    const u = ease((p - 8) / 50), t = 0.04 + 0.86 * u;
+    ball.push([p, t]); spread.push([p, open * 0.8 * u]);
+  }
+  ball.push([100, 0.9]);
+  spread.push([62, angleFor(0.9, 1.08)], [68, angleFor(0.9, 1.08)], [86, 0], [100, 0]);
+  let css = kf('lrod', spread.map(([p, d]) => [p, rot(d)]), { origin: `316px ${pivotY}px` });
+  css += kf('rrod', spread.map(([p, d]) => [p, rot(-d)]), { origin: `324px ${pivotY}px` });
+  css += kf('ball', ball.map(([p, t]) => [p, tr(0, at(t), `scale(${size(t).toFixed(3)})`)]));
   css += '.ball{transform-box:fill-box;transform-origin:center}';
-  css += kf('drop', [[0, op(0)], [3, op(1)], [59, op(1)], [63, op(0)], [100, op(0)]]);
+  css += kf('drop', [[0, op(0)], [3, op(1)], [59, op(1)], [64, op(0)], [100, op(0)]]);
+  css += kf('sink', [[0, tr(0, 0, 'scale(1)')], [59, tr(0, 0, 'scale(1)')], [64, tr(0, 6, 'scale(.6)')], [100, tr(0, 6, 'scale(.6)')]]);
+  css += '.sink{transform-box:fill-box;transform-origin:center}';
   css += windows('glow', [[63, 85]]);
   const nearL = 300, nearR = 340; // rod x positions at the handles
   const rod = (x0, x1) => `<path d="M${x0} ${farY - 4} L${x1} ${nearY + 18}" stroke="${C.steel}" stroke-width="5" stroke-linecap="round"/><path d="M${x0} ${farY - 4} L${x1} ${nearY + 18}" stroke="#fff" stroke-width="1.5" opacity=".5"/>`;
@@ -474,11 +488,11 @@ scenes['bocce-the-moon'] = () => {
 <g fill="${C.ink}" opacity=".35"><ellipse cx="320" cy="${farY - 2}" rx="80" ry="8"/></g>
 <path d="M${320 - half(1) + 18} ${nearY + 10} l-8 90 h16 l4 -90 Z M${320 + half(1) - 18} ${nearY + 10} l8 90 h-16 l-4 -90 Z" fill="${C.woodDark}"/>
 ${board}
-<g class="a glow"><ellipse cx="320" cy="${at(0.9)}" rx="${26 * size(0.9)}" ry="${13 * size(0.9)}" fill="none" stroke="${C.green}" stroke-width="4"/></g>
-<g class="a drop"><circle class="a ball" cx="320" cy="0" r="10" fill="${C.steel}" stroke="${C.ink}" stroke-width="1.5"/><circle class="a ball" cx="317" cy="-3" r="2.5" fill="#fff" opacity=".8"/></g>
+<g class="a glow"><ellipse cx="320" cy="${at(0.9)}" rx="${42 * size(0.9)}" ry="${19 * size(0.9)}" fill="none" stroke="${C.green}" stroke-width="4"/></g>
 <rect x="306" y="${farY - 12}" width="28" height="12" rx="3" fill="${C.grey}"/>
 <g class="a lrod">${rod(316, nearL)}${handle(nearL, 8)}${armPath(nearL - 2, 270)}</g>
 <g class="a rrod">${rod(324, nearR)}${handle(nearR, -8)}${armPath(nearR + 2, 370)}</g>
+<g class="a drop"><g class="a ball"><g class="a sink"><circle cx="320" cy="0" r="${R}" fill="${C.steel}" stroke="${C.ink}" stroke-width="2"/><circle cx="${320 - R * 0.35}" cy="${-R * 0.35}" r="${R * 0.25}" fill="#fff" opacity=".8"/></g></g></g>
 <path d="M262 400 Q262 372 320 368 Q378 372 378 400 Z" fill="${C.yellow}"/>
 <circle cx="320" cy="372" r="24" fill="${C.yellow}"/><path d="M297 368 a23 23 0 0 1 46 0 a26 16 0 0 0 -46 0" fill="${C.woodDark}"/>`,
   });
