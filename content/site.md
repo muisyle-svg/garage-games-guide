@@ -74,3 +74,4 @@ Top scoring competitors may compete in an additional playoff round to determine 
 - Assistants may advise on strategy but **may not touch or influence any event**.
 - The head judge has sole discretion on all matters. This is a Gametatorship.
 - There's no crying in Garage Games.
+- Do not break Sonic.
