@@ -164,7 +164,7 @@ scenes['ring-toss'] = () => {
   let css = kf('swing', [[0, rot(-5)], [50, rot(5)], [100, rot(-5)]], { timing: 'ease-in-out', origin: '330px 0px' });
   css += kf('arm', [[0, rot(85)], [50, rot(85)], [60, rot(145)], [65, rot(15)], [72, rot(5)], [85, rot(85)], [100, rot(85)]], { timing: 'ease-in-out', origin: '2px 150px' });
   css += windows('held', [[0, 65]]);
-  const path = [[65, 158, 168], [68.3, 215, 146], [71.6, 275, 150], [75, 330, 170], [78.3, 395, 205], [81.6, 455, 255], [85, 505, 294], [88, 515, 295]];
+  const path = [[65, 158, 168], [68.3, 215, 123], [71.6, 275, 103], [75, 330, 110], [78.3, 395, 150], [81.6, 455, 216], [85, 505, 294], [88, 515, 295]];
   css += kf('bag', [[0, tr(158, 168)], ...path.map(([p, x, y], i) => [p, tr(x, y, `rotate(${i * 50}deg)`)]), [100, tr(515, 295, 'rotate(350deg)')]]);
   css += windows('bagv', [[65, 97]]);
   return svg({
@@ -176,7 +176,7 @@ scenes['ring-toss'] = () => {
 <path d="M420 322 L600 282 L600 288 L420 328 Z" fill="${C.wood}"/>
 <ellipse cx="560" cy="292" rx="13" ry="4" fill="${C.ink}"/>
 <g class="a bagv"><g class="a bag"><rect x="-12" y="-8" width="24" height="16" rx="5" fill="${C.red}"/><path d="M-8 0 h16" stroke="#fff" stroke-width="1.5" opacity=".4"/></g></g>
-<g class="a swing"><path d="M330 0 V144" stroke="${C.cream}" stroke-width="3"/><circle cx="330" cy="170" r="26" fill="none" stroke="#c8a165" stroke-width="8"/></g>
+<g class="a swing"><path d="M330 0 V84" stroke="${C.cream}" stroke-width="3"/><circle cx="330" cy="110" r="26" fill="none" stroke="#c8a165" stroke-width="8"/></g>
 <g transform="translate(110 0)">${figure()}<g class="a arm">${arm(50)}<g class="a held"><rect x="46" y="142" width="20" height="14" rx="4" fill="${C.red}"/></g></g></g>`,
   });
 };
