@@ -6,6 +6,7 @@ grace_period: 20
 points_per_second: 2
 finish: auto
 image: wall-d.svg
+slideshow: discs
 ---
 
 ## Objective

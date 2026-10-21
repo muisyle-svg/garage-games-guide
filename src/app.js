@@ -26,6 +26,51 @@
   addEventListener('hashchange', openTarget);
   openTarget();
 
+  // ---- Photo slideshow ----
+  for (const box of document.querySelectorAll('[data-slideshow]')) {
+    const slides = JSON.parse(box.querySelector('[data-slides]').textContent);
+    const img = box.querySelector('.slide-photo img');
+    const cap = box.querySelector('.slide-caption');
+    const num = box.querySelector('[data-slide-num]');
+    const playBtn = box.querySelector('[data-slide="play"]');
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let i = 0, timer = null, playing = !still;
+    const preload = k => { new Image().src = slides[(k + slides.length) % slides.length].src; };
+    const show = k => {
+      i = (k + slides.length) % slides.length;
+      img.src = slides[i].src; img.alt = slides[i].caption;
+      cap.textContent = slides[i].caption; num.textContent = i + 1;
+      preload(i + 1);
+    };
+    const schedule = () => { clearTimeout(timer); if (playing) timer = setTimeout(() => { show(i + 1); schedule(); }, 4000); };
+    const setPlaying = on => {
+      playing = on;
+      playBtn.innerHTML = on ? '&#10074;&#10074;' : '&#9654;';
+      playBtn.setAttribute('aria-label', on ? 'Pause slideshow' : 'Play slideshow');
+      schedule();
+    };
+    const step = d => { show(i + d); schedule(); };
+    box.querySelector('[data-slide="prev"]').addEventListener('click', () => step(-1));
+    box.querySelector('[data-slide="next"]').addEventListener('click', () => step(1));
+    playBtn.addEventListener('click', () => setPlaying(!playing));
+    playBtn.hidden = false;
+    box.addEventListener('keydown', ev => {
+      if (ev.key === 'ArrowLeft') step(-1);
+      if (ev.key === 'ArrowRight') step(1);
+    });
+    // Swipe left or right on the photo.
+    let x0 = null;
+    img.addEventListener('pointerdown', ev => { x0 = ev.clientX; });
+    img.addEventListener('pointerup', ev => {
+      if (x0 !== null && Math.abs(ev.clientX - x0) > 40) step(ev.clientX < x0 ? 1 : -1);
+      x0 = null;
+    });
+    // Only advance while the slideshow is on screen.
+    new IntersectionObserver(([en]) => { if (en.isIntersecting) schedule(); else clearTimeout(timer); }).observe(box);
+    setPlaying(playing);
+    preload(1);
+  }
+
   // ---- Search ----
   const input = document.getElementById('q');
   if (input) {

@@ -42,6 +42,10 @@ node tools/animations.mjs
 
 Any image file (`.svg`, `.jpg`, `.png`, `.gif`) dropped into `content/images/` and named in an event's `image:` field works too.
 
+## Photo slideshows
+
+An event can show a captioned photo slideshow under its animation. Wall-D uses `slideshow: discs` in its front matter, which reads `content/slideshows/discs.md`: a `captions:` list paired in order with the photos in `content/images/discs/` (sorted by file name). To change it, swap photos in that folder and keep the captions list in the same order. The build warns if the counts differ.
+
 ## Building and previewing
 
 ```

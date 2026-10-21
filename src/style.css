@@ -163,6 +163,19 @@ mark { background: color-mix(in srgb, var(--accent) 55%, transparent); color: in
 .event-figure { margin: 8px 0 16px; }
 .event-figure img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: var(--radius); background: var(--surface-2); }
 .event-figure figcaption { color: var(--muted); font-size: .92rem; font-style: italic; margin-top: 6px; }
+.slideshow { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin: 0 0 16px; padding: 14px 16px 12px; }
+.slideshow::before { content: ""; display: block; height: 6px; margin: -14px -16px 12px; border-radius: var(--radius) var(--radius) 0 0; background: var(--stripe); }
+.slideshow h2 { margin: 0 0 10px; font-size: 1.15rem; text-transform: uppercase; letter-spacing: .02em; }
+.slideshow-intro p { margin: 0 0 10px; color: var(--muted); }
+.slide { margin: 0; }
+.slide-photo { background: var(--surface-2); border-radius: 10px; overflow: hidden; touch-action: pan-y; }
+.slide-photo img { display: block; width: 100%; max-height: 62vh; aspect-ratio: 1; object-fit: contain; margin: 0 auto; user-select: none; -webkit-user-drag: none; }
+.slide-caption { margin-top: 10px; padding: 10px 14px; background: var(--accent); color: var(--accent-ink); border-radius: 10px; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.25rem, 5vw, 1.7rem); line-height: 1.15; text-align: center; text-transform: uppercase; letter-spacing: .01em; }
+.slide-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
+.slide-btn { font: inherit; font-size: 1.5rem; line-height: 1; min-width: 48px; height: 44px; border-radius: 22px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; }
+.slide-btn:hover { border-color: var(--accent); }
+.slide-play { font-size: .95rem; }
+.slide-count { min-width: 64px; text-align: center; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
 .section-tools { display: flex; justify-content: flex-end; margin-bottom: 4px; }
 .link-button { font: inherit; font-size: .92rem; font-weight: 600; background: none; border: 0; color: var(--link); cursor: pointer; padding: 6px 4px; text-decoration: underline; text-underline-offset: 2px; }
 

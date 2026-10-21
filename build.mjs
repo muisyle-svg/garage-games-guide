@@ -142,7 +142,25 @@ async function prepareImages(events) {
       e.imageUrl = `images/${name}?v=${await fileVersion(`images/${name}`)}`;
       e.imageIsPlaceholder = true;
     }
+    if (e.slideshow) e.slides = await loadSlideshow(e);
   }
+}
+
+// A photo slideshow (content/slideshows/<name>.md): its captions pair up, in order, with the
+// photos in content/images/<folder>/ sorted by file name.
+async function loadSlideshow(e) {
+  const file = path.join(CONTENT, 'slideshows', `${e.slideshow}.md`);
+  const { data, body } = parseFrontMatter(await fs.readFile(file, 'utf8'), `slideshows/${e.slideshow}.md`);
+  const folder = data.folder || e.slideshow;
+  const photos = (await fs.readdir(path.join(CONTENT, 'images', folder)))
+    .filter(f => /\.(jpe?g|png|webp|gif|avif)$/i.test(f)).sort();
+  const captions = data.captions || [];
+  if (photos.length !== captions.length) console.warn(`slideshows/${e.slideshow}.md: ${captions.length} captions for ${photos.length} photos`);
+  const items = [];
+  for (const [i, f] of photos.entries()) {
+    items.push({ src: `images/${folder}/${f}?v=${await fileVersion(`images/${folder}/${f}`)}`, caption: String(captions[i] ?? '') });
+  }
+  return { title: data.title || 'Photos', intro: body.trim(), items };
 }
 
 // ---------- templates ----------
@@ -284,6 +302,7 @@ function eventPage(site, e, prev, next) {
     <img src="${base}${e.imageUrl}" alt="${esc(e.imageIsPlaceholder ? '' : e.image_alt || `Animation: ${plain(md(e.objective || e.title))}`)}" width="640" height="400" decoding="async">
     ${e.caption ? `<figcaption>${mdInline(e.caption)}</figcaption>` : ''}
   </figure>
+  ${e.slides ? slideshow(e.slides, base) : ''}
   <div class="section-tools">
     <button type="button" class="link-button" data-toggle-all>Expand all</button>
   </div>
@@ -295,6 +314,27 @@ function eventPage(site, e, prev, next) {
 </article>`;
   const desc = plain(md(e.objective || '')).slice(0, 155);
   return layout({ site, base, title: e.title, description: desc, body, current: 'event' });
+}
+
+function slideshow(show, base) {
+  const first = show.items[0];
+  if (!first) return '';
+  const n = show.items.length;
+  return `<section class="slideshow" id="slideshow" aria-roledescription="carousel" aria-label="${esc(show.title)}" data-slideshow>
+  <h2>${esc(show.title)}</h2>
+  ${show.intro ? `<div class="slideshow-intro">${md(show.intro)}</div>` : ''}
+  <figure class="slide" aria-live="polite">
+    <div class="slide-photo"><img src="${base}${first.src}" alt="${esc(first.caption)}" width="800" height="800" decoding="async"></div>
+    <figcaption class="slide-caption">${esc(first.caption)}</figcaption>
+  </figure>
+  <div class="slide-controls">
+    <button type="button" class="slide-btn" data-slide="prev" aria-label="Previous photo">&#8249;</button>
+    <span class="slide-count"><span data-slide-num>1</span> / ${n}</span>
+    <button type="button" class="slide-btn slide-play" data-slide="play" aria-label="Pause slideshow" hidden>&#10074;&#10074;</button>
+    <button type="button" class="slide-btn" data-slide="next" aria-label="Next photo">&#8250;</button>
+  </div>
+  <script type="application/json" data-slides>${JSON.stringify(show.items.map(s => ({ src: base + s.src, caption: s.caption }))).replace(/</g, '\\u003c')}</script>
+</section>`;
 }
 
 function rulesPage(site, siteSections, events) {
@@ -332,7 +372,10 @@ function searchIndex(site, siteSections, events) {
     t: e.title,
     u: `events/${e.slug}/`,
     p: e.points ?? null,
-    s: e.sections.filter(s => s.md).map(s => ({ h: s.heading, a: s.key, x: plain(md(s.md)) })),
+    s: [
+      ...e.sections.filter(s => s.md).map(s => ({ h: s.heading, a: s.key, x: plain(md(s.md)) })),
+      ...(e.slides ? [{ h: e.slides.title, a: 'slideshow', x: e.slides.items.map(s => s.caption).join(' · ') }] : []),
+    ],
   }));
   docs.push({
     t: 'How it works',
