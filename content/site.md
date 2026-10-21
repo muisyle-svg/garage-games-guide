@@ -7,11 +7,11 @@ facts:
   - 5 minutes
   - Most points wins
 steps:
-  - '**Press the station button to start.** Its light blinks red while the clock runs.'
-  - '**Complete the objective.** Each event page shows the setup, the gameplay and the fine print.'
-  - '**Press the button again to stop.** The light turns green. Wall-D and Chaos Heist record your time automatically.'
-  - '**Beat the grace period.** Finish inside it to keep every point; after that the event loses points each second.'
-  - '**Clear all 13 with time left?** The Sonic Dash bonus round starts on its own.'
+  - '**Ready, go!** You have 5 minutes to complete as many events as you can.'
+  - '**Press a button to start an event.** Its light blinks yellow while active.'
+  - '**Press the button again when you have completed the event.** Its light turns green. Your score is recorded automatically.'
+  - '**Finish events faster for more points!** You can leave any event and start a new one, but your clock keeps ticking.'
+  - '**Clear all the events to trigger the bonus round.** Most points wins!'
 ---
 
 ## The run
@@ -24,7 +24,7 @@ Events can be done in any order. You may leave an event and come back to it late
 
 Each station has a button.
 
-1. Press the button to start the event. The red light blinks.
+1. Press the button to start the event. The light blinks yellow while it's active.
 2. Press the button again when you finish. The light turns green.
 
 Only press buttons during your own run. Wall-D and Chaos Heist finish automatically, so there is nothing to press at the end.
