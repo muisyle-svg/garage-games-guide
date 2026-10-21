@@ -127,7 +127,7 @@ async function fileVersion(rel) {
   return crypto.createHash('sha1').update(await fs.readFile(path.join(OUT, rel))).digest('hex').slice(0, 8);
 }
 
-// Images placed in content/site.md as images/<file>: point them at the right folder with a ?v= version.
+// Images placed in content/site.md or an event page as images/<file>: point them at the right folder with a ?v= version.
 const IMAGE_VERSIONS = new Map();
 const siteImages = (html, base) => html.replace(/<a href="images\/([^"?]+)"/g, (m, f) =>
   `<a href="${base}images/${f}${IMAGE_VERSIONS.has(f) ? `?v=${IMAGE_VERSIONS.get(f)}` : ''}"`).replace(/(<img[^>]*?) src="images\/([^"?]+)"/g, (m, pre, f) =>
@@ -283,7 +283,7 @@ function eventPage(site, e, prev, next) {
   const base = '../../';
   const sections = e.sections.map(s => {
     const id = s.key;
-    const inner = md(s.md);
+    const inner = siteImages(md(s.md), base);
     return `<details class="guideline-section" id="${id}"${s.open ? ' open' : ''}>
 <summary><h2>${esc(s.heading)}</h2></summary>
 <div class="guideline-body">${inner}</div>

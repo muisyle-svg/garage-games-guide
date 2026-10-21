@@ -21,6 +21,8 @@ All discs must remain in exact starting location.
 
 When you press the start button, the TV scoreboard will display the name/description of a disc on the wall. You must input the coordinates of the disc on the keypad, Row A-D first, then column 1-15 second, then * to enter. You must successfully find two discs to complete the event.
 
+![The Wall-D keypad: number keys 0 to 9, letter keys A to D, star and pound](images/keypad.jpg)
+
 ## Additional Guidelines and Clarifications
 
 - Discs will always be entered Row, then Column, then *
