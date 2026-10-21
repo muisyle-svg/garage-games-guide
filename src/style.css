@@ -179,7 +179,7 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .pager a[rel="next"] { text-align: right; }
 
 /* Guidelines page */
-.event .guideline-body img { width: 220px; max-width: 70%; margin: 10px auto 14px; border-radius: 10px; }
+.event .guideline-section:not(.slideshow) .guideline-body img { width: 220px; max-width: 70%; margin: 10px auto 14px; border-radius: 10px; }
 .guidelines { max-width: 760px; margin: 0 auto; }
 .guidelines .guideline-body { padding-top: 10px; }
 .guidelines .guideline-body img { border-radius: 10px; }
