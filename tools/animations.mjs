@@ -324,7 +324,7 @@ scenes['paddle-peril'] = () => {
 
 // ---------- Sort & Sweet: the competitor, behind the table, sorts four of each candy into its own small bowl ----------
 scenes['sort-and-sweet'] = () => {
-  const dur = 10, table = 250;
+  const dur = 34, table = 250;
   const bowls = [110, 195, 445, 530];
   const candy = [
     c => `<circle r="6" fill="${c}"/><text y="2.5" text-anchor="middle" style="font:700 6px sans-serif;fill:#fff">S</text>`,
@@ -335,21 +335,29 @@ scenes['sort-and-sweet'] = () => {
   const tint = [C.red, C.purple, C.orange, C.green];
   let seed = 7; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
   let css = '', pieces = '';
-  const hand = [[0, 320, 196]]; // [percent, x, y] of the hand in the scene
-  let n = 0;
-  for (let k = 0; k < 4; k++) for (let t = 0; t < 4; t++) {
-    const sx = 262 + rnd() * 116, sy = 194 + rnd() * 12, ex = bowls[t] - 18 + k * 12, ey = 216;
-    const s = 4 + n * 5;
-    css += kf(`c${n}`, [[0, tr(sx, sy)], [s, tr(sx, sy)], [s + 2, tr((sx + ex) / 2, 160)], [s + 4, tr(ex, ey)], [100, tr(ex, ey)]], { timing: 'ease-in-out' });
-    hand.push([s - 1.5, sx, sy - 4], [s, sx, sy - 4], [s + 2, (sx + ex) / 2, 156], [s + 4, ex, ey - 4]);
-    pieces += `<g class="a c${n}">${candy[t](tint[(k + t) % 4])}</g>`;
-    n++;
+  // One bowl at a time: the competitor shuffles over once per bowl, then the arm does the reaching.
+  const order = [1, 0, 2, 3], bodyX = [185, 232, 408, 455], pick = [[262, 285], [270, 305], [335, 370], [355, 378]];
+  const P = sec => (sec / dur) * 100;
+  const hand = [], body = [[0, 320]];
+  let t = 1.2, n = 0;
+  for (const b of order) {
+    body.push([P(t), body[body.length - 1][1]], [P(t + 1.4), bodyX[b]]);
+    hand.push([P(t), 40, 50], [P(t + 1.4), 40, 50]);
+    t += 1.6;
+    for (let k = 0; k < 4; k++) {
+      const sx = pick[b][0] + rnd() * (pick[b][1] - pick[b][0]), sy = 194 + rnd() * 12, ex = bowls[b] - 18 + k * 12, ey = 216;
+      const bx = bodyX[b], mx = (sx + ex) / 2;
+      css += kf(`c${n}`, [[0, tr(sx, sy)], [P(t + 0.5), tr(sx, sy)], [P(t + 0.9), tr(mx, 168)], [P(t + 1.3), tr(ex, ey)], [100, tr(ex, ey)]], { timing: 'ease-in-out' });
+      hand.push([P(t + 0.5), sx - bx, sy - 4 - 150], [P(t + 0.9), mx - bx, 164 - 150], [P(t + 1.3), ex - bx, ey - 4 - 150]);
+      pieces += `<g class="a c${n}">${candy[b](tint[(k + b) % 4])}</g>`;
+      t += 1.5; n++;
+    }
   }
-  hand.push([90, 320, 196], [100, 320, 196]);
-  // The competitor side-steps behind the table to stay just left of the hand.
-  const reach = 56;
-  css += kf('step', hand.map(([p, x]) => [p, tr(x - reach, 0)]), { timing: 'ease-in-out' });
-  const a = arm2('sort', hand.map(([p, , y]) => [p, reach - 2, y - 150]), { L1: 48, L2: 48 });
+  hand.unshift([0, 40, 50]);
+  hand.push([P(t + 0.4), 40, 50], [100, 40, 50]);
+  body.push([P(t + 0.4), body[body.length - 1][1]], [P(t + 2), 320], [100, 320]);
+  css += kf('step', body.map(([p, x]) => [p, tr(x, 0)]), { timing: 'ease-in-out' });
+  const a = arm2('sort', hand, { L1: 56, L2: 56 });
   css += a.css;
   css += windows('fade', [[0, 96]]);
   let decoys = '';
@@ -359,7 +367,7 @@ scenes['sort-and-sweet'] = () => {
     title: 'Standing behind a table, a competitor sorts candy out of a big bowl into four small bowls, four of the same candy in each',
     dur, css,
     body: `${room()}
-<g class="a step">${figure({ legs: 'walk' })}</g>
+<g class="a step">${figure({ legs: 'stand' })}</g>
 <rect x="50" y="${table}" width="540" height="12" rx="3" fill="${C.wood}"/>
 <rect x="70" y="262" width="12" height="74" fill="${C.woodDark}"/><rect x="558" y="262" width="12" height="74" fill="${C.woodDark}"/>
 ${decoys}<g class="a fade">${pieces}</g>
