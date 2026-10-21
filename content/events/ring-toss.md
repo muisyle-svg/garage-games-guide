@@ -20,7 +20,7 @@ All bags on the stool.
 
 Standing behind the white line, you must throw one cornhole bag through the gymnastics ring, and it must land and stay on the cornhole board, or pass through the hole.
 
-## Additional guidelines
+## Additional Guidelines and Clarifications
 
 - All shots must be taken underhand. You may NOT stop the ring from swinging.
 - The scoring bag must remain on the board or in the hole.

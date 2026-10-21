@@ -20,6 +20,6 @@ All balls in the bowl.
 
 Take as many balls as desired from the bowl behind the bar, and shoot them at the cups on the top shelf. One in wins.
 
-## Additional guidelines
+## Additional Guidelines and Clarifications
 
 - Balls must be thrown one at a time.

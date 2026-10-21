@@ -20,7 +20,7 @@ All darts in the holders.
 
 Pick up as many darts as desired from the dart holders on the wall, push the dartboard to the high side of the rower, then move to the carpet. Throw darts until you land one within the circumference of the triple ring.
 
-## Additional guidelines
+## Additional Guidelines and Clarifications
 
 - You may only throw one dart at a time.
 - Any scoring dart must hit while the dart board is moving left to right, and before it hits the stop on the right side.

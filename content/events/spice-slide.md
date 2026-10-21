@@ -20,7 +20,7 @@ Both spices on the button side of the bar.
 
 Standing at one end of the bar, slide the spices, Garlic Salt and Mr. Sprinkles, towards the other end of the bar, attempting to get them to stop in the scoring zone (designated by blue tape).
 
-## Additional guidelines
+## Additional Guidelines and Clarifications
 
 - The spice must remain upright to score.
 - Any part of the spice breaking the plane of the blue tape counts (as determined by the judge).

@@ -18,7 +18,7 @@ const EXPLICIT_INDEX = process.argv.includes('--explicit-index');
 const SECTIONS = [
   { key: 'objective', heading: 'Objective', open: true },
   { key: 'gameplay', heading: 'Gameplay', open: true },
-  { key: 'additional-guidelines', heading: 'Additional guidelines and clarifications', open: true, aliases: ['additional-guidelines-and-clarifications'] },
+  { key: 'additional-guidelines', heading: 'Additional Guidelines and Clarifications', open: true, aliases: ['additional-guidelines-and-clarifications'] },
   { key: 'setup', heading: 'Setup/Reset', open: false, aliases: ['setup-reset', 'reset'] },
 ];
 

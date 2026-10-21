@@ -24,7 +24,7 @@ Your run ends when you fail to hit a button in time, or your overall 5 minute ru
 
 *the same button will never be selected twice in a row
 
-## Additional guidelines and clarifications
+## Additional Guidelines and Clarifications
 
 - The amount of time left to hit the button is indicated by the color of the light and the speed of the blinking. It is also displayed on the TV.
 - The minimum time to get to a button cannot go below 2 seconds.

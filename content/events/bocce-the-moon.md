@@ -20,7 +20,7 @@ Ball inside the return.
 
 Take the ball out from the return and place it on the rails. Roll the ball upwards by opening and closing the rails. You must land the ball in the green zone to complete the event.
 
-## Additional guidelines
+## Additional Guidelines and Clarifications
 
 - The ball must start each attempt touching the block at the bottom of the rails.
 - You may roll the ball down the rails or place the ball directly at the bottom.

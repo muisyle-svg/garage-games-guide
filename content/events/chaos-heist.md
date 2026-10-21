@@ -20,7 +20,7 @@ All Emeralds spread to designated spots, all rings returned to bowl.
 
 Sonic needs your help! The evil Dr. Robotnik has stolen the Chaos Emeralds from the shrine and scattered them across the land! Save the Garage Arcade by returning the emeralds, and using 20 rings to defeat Robotnik once and for all!
 
-## Additional guidelines and clarifications
+## Additional Guidelines and Clarifications
 
 - There is no button for this event. Placing the final emerald counts as the start button press.
 - You may collect the emeralds at any time during your run. Emeralds can be placed in any position.

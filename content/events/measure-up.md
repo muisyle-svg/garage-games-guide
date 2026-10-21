@@ -20,7 +20,7 @@ Tape extended in designated zone.
 
 Keeping the measuring tape body in the designated zone, you must release the lock on the tape, and as it quickly winds back into the body, use the lock to stop the tape while the end is between the two lines of the scoring zone.
 
-## Additional guidelines
+## Additional Guidelines and Clarifications
 
 - You must use the lock on the tape to stop the tape and not your fingers, or trapping the tape against the ground.
 - The tape must stay locked after you let go.

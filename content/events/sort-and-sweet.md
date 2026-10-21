@@ -20,7 +20,7 @@ All candy mixed in big bowl.
 
 Dig through the bowl of candy to find 4 of each designated brand and separate them into their own bowls.
 
-## Additional guidelines
+## Additional Guidelines and Clarifications
 
 - You are looking for Skittles, Milky Way, Twix, and Gummi Bears.
 - There are 6 of each in the bowl, you only have to find 4.
