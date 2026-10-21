@@ -14,10 +14,17 @@ Hit the lit button before time runs out.
 
 ## Gameplay
 
-If you complete all the events with time remaining on the clock, the bonus round will start automatically. You must simply press each button that is lit up before time runs out. Button hits are worth 5 points each.
+A random* button will begin flashing its light, and you will have 10 seconds to press it. The active button is also displayed on the TV. When pressed, a new random button will begin flashing.
 
-## Additional rules
+Every 10 seconds of elapsed time, the maximum time is reduced by 1 second. So after 30 seconds, you only have 8 seconds to get to the next button, then 7, and so on.
 
-- Only one button is active at a time, as indicated by the light blinking. The scoreboard will also display which target is active.
-- You start with 10 seconds to hit each button, and every 10 seconds, you get 1 second less to hit the next button.
-- Your run ends when either the 5 minute timer elapses, or you cannot reach the next button in time.
+Each button press is worth an additional 5 points.
+
+Your run ends when you fail to hit a button in time, or your overall 5 minute run timer elapses.
+
+*the same button will never be selected twice in a row
+
+## Additional guidelines and clarifications
+
+- The amount of time left to hit the button is indicated by the color of the light and the speed of the blinking. It is also displayed on the TV.
+- The Chaos Heist station is not included in the bonus event, as it has no button, but the Wall-D button is.
