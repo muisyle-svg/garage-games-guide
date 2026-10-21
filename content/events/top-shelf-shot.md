@@ -1,7 +1,7 @@
 ---
 title: 'Top Shelf Shot'
 order: 10
-points: 5
+points: 50
 grace_period: 8
 points_per_second: 2
 finish: button
