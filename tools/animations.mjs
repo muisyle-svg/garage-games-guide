@@ -517,14 +517,18 @@ scenes['hammer-head'] = () => {
 // ---------- Chaos Heist: kneeling at the arcade cabinet feeding in 20 rings ----------
 scenes['chaos-heist'] = () => {
   const dur = 8, count = 20;
-  const af = [[0, rot(60)]], coin = [], nums = [];
+  // Hand positions relative to the shoulder: dipping into the cup held in the other hand, then up to the coin slot.
+  const cup = [40, 48], slot = [88, 44];
+  const hf = [[0, ...cup]], coin = [], nums = [];
   for (let k = 0; k < count; k++) {
     const s = 4 + k * 4;
-    af.push([s, rot(60)], [s + 2, rot(27.6)], [s + 3.2, rot(60)]);
+    hf.push([s, ...cup], [s + 2, ...slot], [s + 3.2, ...cup]);
     coin.push([s - 1, s + 2]);
   }
-  af.push([100, rot(60)]);
-  let css = kf('arm', af, { timing: 'ease-in-out', origin: '2px 150px' });
+  hf.push([100, ...cup]);
+  const L = 52, hand = `<g class="a coin"><circle cx="${2 + 2 * L}" cy="150" r="6" fill="${C.yellow}" stroke="${C.ink}" stroke-width="1.5"/></g>`;
+  const a = arm2('feed', hf, { L1: L, L2: L, hand });
+  let css = a.css;
   css += windows('coin', coin);
   for (let n = 0; n <= count; n++) {
     const a = n === 0 ? 0 : 4 + (n - 1) * 4 + 2, b = n === count ? 100 : 4 + n * 4 + 2;
@@ -546,8 +550,11 @@ scenes['chaos-heist'] = () => {
 <rect x="450" y="228" width="64" height="72" rx="4" fill="${C.steelDark}"/>
 <rect x="458" y="246" width="16" height="7" rx="2" fill="${C.ink}"/><rect x="488" y="246" width="16" height="7" rx="2" fill="${C.ink}"/>
 <rect x="470" y="276" width="24" height="12" rx="2" fill="${C.ink}"/>
-<path d="M404 336 L408 314 H436 L440 336 Z" fill="${C.grey}"/>${[412, 420, 428].map(x => `<circle cx="${x}" cy="316" r="5" fill="${C.yellow}" stroke="${C.ink}" stroke-width="1"/>`).join('')}
-<g transform="translate(374 55)">${figure({ legs: 'kneel', offArm: false })}<g class="a arm">${arm(100)}<g class="a coin"><circle cx="104" cy="150" r="6" fill="${C.yellow}" stroke="${C.ink}" stroke-width="1.5"/></g></g></g>`,
+<g transform="translate(374 55)">${figure({ legs: 'kneel', offArm: false })}
+<path d="M0 168 L10 206 L32 212" stroke="${C.yellow}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<path d="M28 200 H58 L54 228 H32 Z" fill="${C.grey}" stroke="${C.ink}" stroke-width="2"/>${[36, 43, 50].map(x => `<circle cx="${x}" cy="200" r="5" fill="${C.yellow}" stroke="${C.ink}" stroke-width="1"/>`).join('')}
+<circle cx="32" cy="212" r="7" fill="${C.yellow}"/>
+${a.svg}</g>`,
   });
 };
 
