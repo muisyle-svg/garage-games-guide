@@ -307,11 +307,11 @@ function eventPage(site, e, prev, next, events) {
   </div>
   ${sections}
   ${e.slides ? slideshow(e.slides, base) : ''}
-  ${box('all-events', 'All events', lineup(events, base, e.slug), false)}
   <nav class="pager" aria-label="More events">
     ${prev ? `<a rel="prev" href="${link(base, `events/${prev.slug}/`)}"><span>Previous</span>${esc(prev.title)}</a>` : '<span></span>'}
     ${next ? `<a rel="next" href="${link(base, `events/${next.slug}/`)}"><span>Next</span>${esc(next.title)}</a>` : '<span></span>'}
   </nav>
+  ${box('all-events', 'All events', lineup(events, base, e.slug), false)}
 </article>`;
   const desc = plain(md(e.objective || '')).slice(0, 155);
   return layout({ site, base, title: e.title, description: desc, body, current: 'event' });
