@@ -31,7 +31,7 @@ Only press buttons during your own run. Wall-D and Chaos Heist finish automatica
 
 ## Scoring
 
-Every event has a point value and a grace period. Finish within the grace period and you keep the full points. After the grace period, the event loses points every second until you stop the clock. Each event page lists its points, grace period and points lost per second.
+Every event has a point value and a grace period. Finish within the grace period and you keep the full points. After the grace period, the event loses points every second until you stop the clock. At the top of each event page, the stopwatch badge shows the grace period and the falling-arrow badge shows the points lost per second after it.
 
 ## Bonus round
 

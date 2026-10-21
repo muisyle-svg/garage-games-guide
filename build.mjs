@@ -18,7 +18,6 @@ const SECTIONS = [
   { key: 'objective', heading: 'Objective', open: true },
   { key: 'setup', heading: 'Setup', open: true },
   { key: 'gameplay', heading: 'Gameplay', open: true },
-  { key: 'scoring', heading: 'Scoring', open: true },
   { key: 'additional-rules', heading: 'Additional rules', open: false },
 ];
 
@@ -98,28 +97,11 @@ async function loadEvents() {
       else console.warn(`${f}: text before the first "## " heading is ignored`);
     }
     for (const x of extra) console.warn(`${f}: extra section "${x.heading}" shown after the standard ones`);
-    const scoring = sections.find(s => s.key === 'scoring');
-    if (!scoring.md) scoring.md = scoringText(data);
     const objective = sections.find(s => s.key === 'objective').md;
     events.push({ ...data, slug, file: f, objective, sections: [...sections, ...extra].filter(s => s.md) });
   }
   events.sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.title.localeCompare(b.title));
   return events;
-}
-
-// Scoring paragraph built from the event's numbers, so every page says it the same way.
-function scoringText(e) {
-  const lines = [];
-  if (e.scoring) lines.push(e.scoring);
-  if (e.points != null) {
-    let t = `**${e.points} points.**`;
-    if (e.grace_period != null) t += ` Finish within the ${e.grace_period}-second grace period to keep them all.`;
-    if (e.points_per_second != null) t += ` After that, you lose ${e.points_per_second} ${e.points_per_second === 1 ? 'point' : 'points'} every second.`;
-    lines.push(t);
-  }
-  if (e.finish === 'button') lines.push('Press the button again to stop the clock.');
-  if (e.finish === 'auto') lines.push('Your time is recorded automatically. There is no button to press at the end.');
-  return lines.join('\n\n');
 }
 
 // ---------- images ----------
@@ -206,6 +188,26 @@ function pill(e, big = false) {
   return `<span class="${cls}"><span class="visually-hidden">Worth </span>${e.points}<span class="unit"> pts</span></span>`;
 }
 
+// Small line icons for the scoring badges; they take the badge's text color.
+const ICON = {
+  grace: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M10 2.5h4M12 2.5v3.5M18.5 6.5l1.5-1.5"/>',
+  decay: '<path d="M3 6l6 6 4-3 8 8"/><path d="M21 11v6h-6"/>',
+  auto: '<circle cx="12" cy="12" r="8.5"/><path d="M8 12.5l2.7 2.7L16 9.5"/>',
+  hit: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/>',
+};
+const icon = k => `<svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
+const stat = (k, value, label, title) => `<li class="stat" title="${esc(title)}">${icon(k)}<span class="stat-text"><span class="stat-value">${value}</span><span class="stat-label">${label}</span></span></li>`;
+
+// Points bubble plus scoring badges for the top of an event page.
+function stats(e) {
+  const out = [`<li>${pill(e, true)}</li>`];
+  if (e.points_label) out.push(stat('hit', esc(e.points_label), 'per hit', `Each button hit is worth ${e.points_label}`));
+  if (e.grace_period != null) out.push(stat('grace', `${e.grace_period} s`, 'grace', `Grace period: finish within ${e.grace_period} seconds to keep every point`));
+  if (e.points_per_second != null) out.push(stat('decay', `−${e.points_per_second}/s`, 'after grace', `After the grace period you lose ${e.points_per_second} ${e.points_per_second === 1 ? 'point' : 'points'} every second`));
+  if (e.finish === 'auto') out.push(stat('auto', 'Auto', 'stop', 'Your time is recorded automatically. No need to press the button at the end.'));
+  return `<ul class="stats" aria-label="Scoring">${out.join('')}</ul>`;
+}
+
 function card(e, base) {
   return `<li class="card" data-slug="${esc(e.slug)}">
   <a href="${link(base, `events/${e.slug}/`)}">
@@ -268,11 +270,9 @@ function eventPage(site, e, prev, next) {
 <article class="event">
   <nav class="crumbs" aria-label="Breadcrumb"><a href="${link(base, '')}">All events</a></nav>
   <header class="event-head">
-    <div>
-      ${e.subtitle ? `<p class="eyebrow">${esc(e.subtitle)}</p>` : ''}
-      <h1>${esc(e.title)}</h1>
-    </div>
-    ${pill(e, true)}
+    ${e.subtitle ? `<p class="eyebrow">${esc(e.subtitle)}</p>` : ''}
+    <h1>${esc(e.title)}</h1>
+    ${stats(e)}
   </header>
   <figure class="event-figure">
     <img src="${base}${e.imageUrl}" alt="${esc(e.imageIsPlaceholder ? '' : e.image_alt || `Animation: ${plain(md(e.objective || e.title))}`)}" width="640" height="400" decoding="async">

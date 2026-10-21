@@ -4,7 +4,7 @@ order: 14
 bonus: true
 subtitle: 'Bonus round'
 finish: none
-scoring: 'Each button hit is worth **5 points**.'
+points_label: '5 pts'
 image: sonic-dash.svg
 ---
 
