@@ -17,6 +17,7 @@ steps:
 ## The course
 
 [![Map of the garage showing where each event is](images/course.jpg)](images/course.jpg)
+
 The locations depicted above are the approximate competition zones, NOT the locations of the buttons. Additional lines, scoring zones, and restriction zones are not indicated.
 
 ## The run
@@ -42,6 +43,7 @@ Each station* has a button labeled with the sign for that event. When the run be
 3. Press the button again when you finish. The light turns green to indicated it is completed.
 
 *The Wall-D event button will only be pressed to **start** the event, any additional presses will have no effect. The finish is logged automatically.
+
 *The Chaos Heist event **does not have a button**, instead, collecting and placing the emeralds will count as the start button, and the finish will be logged automatically.
 
 ## Scoring
