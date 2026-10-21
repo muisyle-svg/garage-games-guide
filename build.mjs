@@ -122,19 +122,24 @@ function placeholderSvg(title, i) {
 </svg>`;
 }
 
+// Short content hash used as a ?v= query, so browsers and the offline cache fetch an image again whenever it changes.
+async function fileVersion(rel) {
+  return crypto.createHash('sha1').update(await fs.readFile(path.join(OUT, rel))).digest('hex').slice(0, 8);
+}
+
 async function prepareImages(events) {
   await fs.mkdir(path.join(OUT, 'images'), { recursive: true });
   const srcDir = path.join(CONTENT, 'images');
   if (await exists(srcDir)) await fs.cp(srcDir, path.join(OUT, 'images'), { recursive: true });
   for (const [i, e] of events.entries()) {
     if (e.image && await exists(path.join(srcDir, e.image))) {
-      e.imageUrl = `images/${e.image}`;
+      e.imageUrl = `images/${e.image}?v=${await fileVersion(`images/${e.image}`)}`;
       e.imageIsPlaceholder = false;
     } else {
       if (e.image) console.warn(`${e.file}: image "${e.image}" not found in content/images, using a placeholder`);
       const name = `placeholder-${e.slug}.svg`;
       await fs.writeFile(path.join(OUT, 'images', name), placeholderSvg(e.title, i));
-      e.imageUrl = `images/${name}`;
+      e.imageUrl = `images/${name}?v=${await fileVersion(`images/${name}`)}`;
       e.imageIsPlaceholder = true;
     }
   }
@@ -394,8 +399,13 @@ async function main() {
   const files = (await listFiles(OUT)).filter(f => !f.startsWith('.') && f !== '404.html').sort();
   const hash = crypto.createHash('sha1');
   for (const f of files) hash.update(f).update(await fs.readFile(path.join(OUT, f)));
-  const precache = files.map(f => f.endsWith('index.html') && !EXPLICIT_INDEX ? f.slice(0, -'index.html'.length) || './' : f)
-    .map(f => f.replace(/^(style\.css|app\.js)$/, `$1?v=${ASSET_VERSION}`));
+  const precache = [];
+  for (const f of files) {
+    if (f.endsWith('index.html') && !EXPLICIT_INDEX) precache.push(f.slice(0, -'index.html'.length) || './');
+    else if (f === 'style.css' || f === 'app.js') precache.push(`${f}?v=${ASSET_VERSION}`);
+    else if (f.startsWith('images/')) precache.push(`${f}?v=${await fileVersion(f)}`);
+    else precache.push(f);
+  }
   const sw = (await fs.readFile(path.join(SRC, 'sw.js'), 'utf8'))
     .replace('__CACHE_VERSION__', hash.digest('hex').slice(0, 10))
     .replace('__PRECACHE__', JSON.stringify(precache, null, 2));

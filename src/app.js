@@ -108,6 +108,12 @@
   addEventListener('offline', showStatus);
   showStatus();
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-    navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(() => {});
+    // When a new version of the guide has been saved offline, reload once so it shows straight away.
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController && !reloaded) { reloaded = true; location.reload(); }
+    });
+    navigator.serviceWorker.register(base + 'sw.js', { scope: base, updateViaCache: 'none' }).catch(() => {});
   }
 })();
