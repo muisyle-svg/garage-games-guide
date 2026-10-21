@@ -18,11 +18,12 @@ All Emeralds spread to designated spots, all rings returned to bowl.
 
 ## Gameplay
 
-Gather the 7 emeralds from around the garage and return them to the shrine. Then input 20 rings to defeat Robotnik.
+Sonic needs your help! The evil Dr. Robotnik has stolen the Chaos Emeralds from the shrine and scattered them across the land! Save the Garage Arcade by returning the emeralds, and using 20 rings to defeat Robotnik once and for all!
 
-## Additional guidelines
+## Additional guidelines and clarifications
 
-- There is no button for this event. Returning the final emerald starts the timer.
-- You may collect the emeralds at any time during your run.
+- There is no button for this event. Placing the final emerald counts as the start button press.
+- You may collect the emeralds at any time during your run. Emeralds can be placed in any position.
+- While collecting emeralds, you may place them on the shrine, keep them on your person, or place them in any other location until you are ready.
 - Once the final emerald is placed, you can begin entering rings. When you have successfully entered 20 rings the event will complete automatically.
 - You can use either coin slot, or both. It is possible to jam the coin slots. I suggest you try not to do that.
