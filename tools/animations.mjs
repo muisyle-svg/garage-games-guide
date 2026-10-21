@@ -448,14 +448,15 @@ scenes['bocce-the-moon'] = () => {
       + `<text x="${320 + half(t) * 0.55}" y="${y + 6 * k}" text-anchor="middle" style="font:800 ${(20 * k).toFixed(1)}px system-ui,sans-serif;fill:${C.ink}" opacity=".75">${label}</text>`;
   });
   // The rods pivot together at the far end; spreading the handles widens the gap so the ball rolls toward the player.
-  const spread = [[0, 0], [6, 0], [12, 3], [17, 0], [22, 0], [28, 3], [33, 0], [38, 0], [44, 3], [49, 0], [54, 0], [60, 3], [65, 0], [70, 0], [74, 6], [90, 6], [95, 0], [100, 0]];
+  // One smooth open rolls the ball the whole way up; the rods close again after it drops.
+  const spread = [[0, 0], [8, 0], [60, 6], [68, 6], [86, 0], [100, 0]];
   let css = kf('lrod', spread.map(([p, a]) => [p, rot(a)]), { timing: 'ease-in-out', origin: `316px ${farY - 4}px` });
   css += kf('rrod', spread.map(([p, a]) => [p, rot(-a)]), { timing: 'ease-in-out', origin: `324px ${farY - 4}px` });
-  const ts = [[0, 0.04], [6, 0.04], [12, 0.22], [22, 0.22], [28, 0.42], [38, 0.42], [44, 0.62], [54, 0.62], [60, 0.9], [100, 0.9]];
+  const ts = [[0, 0.04], [8, 0.04], [58, 0.9], [100, 0.9]];
   css += kf('ball', ts.map(([p, t]) => [p, tr(0, at(t), `scale(${size(t).toFixed(3)})`)]), { timing: 'ease-in-out' });
   css += '.ball{transform-box:fill-box;transform-origin:center}';
-  css += kf('drop', [[0, op(1)], [72, op(1)], [76, op(0)], [100, op(0)]]);
-  css += windows('glow', [[76, 92]]);
+  css += kf('drop', [[0, op(0)], [3, op(1)], [59, op(1)], [63, op(0)], [100, op(0)]]);
+  css += windows('glow', [[63, 85]]);
   const nearL = 300, nearR = 340; // rod x positions at the handles
   const rod = (x0, x1) => `<path d="M${x0} ${farY - 4} L${x1} ${nearY + 18}" stroke="${C.steel}" stroke-width="5" stroke-linecap="round"/><path d="M${x0} ${farY - 4} L${x1} ${nearY + 18}" stroke="#fff" stroke-width="1.5" opacity=".5"/>`;
   const handle = (x, dx) => `<rect x="${x - 9}" y="${nearY + 14}" width="18" height="40" rx="7" fill="${C.woodDark}" transform="rotate(${dx} ${x} ${nearY + 14})"/>`;
