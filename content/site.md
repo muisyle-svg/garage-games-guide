@@ -51,17 +51,11 @@ All listed points, grace periods, and subsequent points lost are subject to chan
 
 ## Bonus round
 
-If you complete **all** the events with time remaining on the clock, the Sonic Speed Dash bonus round starts automatically. 
+If you complete **all** the events with time remaining on the clock, the Sonic Speed Dash bonus round starts automatically. See the bonus round event for additional information.
 
-A random* button will begin flashing its light, and you will have 10 seconds to press it. The active button is also displayed on the TV. When pressed, a new random button will begin flashing.
+## Playoffs
 
-Every 10 seconds of elapsed time, the maximum time is reduced by 1 second. So after 30 seconds, you only have 8 seconds to get to the next button, then 7, and so on.
-
-Each button press is worth an additional 5 points.
-
-Your run ends when you fail to hit a button in time, or your overall 5 minute run timer elapses.
-
-*the same button will never be selected twice in a row
+Top scoring competitors may compete in an additional playoff round to determine a champion, subject solely to time available and judges discretion.
 
 ## General guidelines and other information
 
