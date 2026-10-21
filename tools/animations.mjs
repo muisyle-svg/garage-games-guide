@@ -261,7 +261,7 @@ scenes['wall-d'] = () => {
 ${grid}
 <g class="a pulse"><circle class="a ring" cx="${cx(5)}" cy="${cy(0)}" r="17" fill="none" stroke="${C.yellow}" stroke-width="5"/></g>
 <rect x="24" y="24" width="132" height="82" rx="6" fill="${C.ink}" stroke="${C.steelDark}" stroke-width="4"/>
-<g class="a find"><text class="label" x="90" y="54" text-anchor="middle">FIND</text><circle cx="90" cy="80" r="12" fill="${palette[(0 * 7 + 5 * 3) % palette.length]}"/></g>
+<g class="a find"><text class="label" x="90" y="52" text-anchor="middle">FIND</text><text x="90" y="80" text-anchor="middle" style="font:800 15px system-ui,sans-serif;fill:${C.white}">Nationals 2016</text></g>
 <g style="font:800 24px ui-monospace,monospace;fill:#7ee2a8">
 <text class="a t1" x="90" y="74" text-anchor="middle" opacity="0">A</text><text class="a t2" x="90" y="74" text-anchor="middle" opacity="0">A5</text>
 </g>
