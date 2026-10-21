@@ -304,21 +304,36 @@ scenes['measure-up'] = () => {
 // ---------- Paddle Peril: balancing a paddle on one finger through the squat rack and back ----------
 scenes['paddle-peril'] = () => {
   const dur = 8;
-  let css = kf('walk', [[0, tr(150, 0)], [6, tr(150, 0)], [44, tr(585, 0)], [50, tr(585, 0)], [88, tr(150, 0)], [100, tr(150, 0)]], { timing: 'ease-in-out' });
+  // Walk at a steady pace: out across the rubber, through the squat rack, turn, and back to the turf.
+  let css = kf('walk', [[0, tr(150, 0)], [6, tr(150, 0)], [44, tr(585, 0)], [50, tr(585, 0)], [88, tr(150, 0)], [100, tr(150, 0)]], { timing: 'linear' });
   css += kf('flip', [[0, 'transform:scaleX(1)'], [47, 'transform:scaleX(1)'], [47.01, 'transform:scaleX(-1)'], [91, 'transform:scaleX(-1)'], [91.01, 'transform:scaleX(1)'], [100, 'transform:scaleX(1)']], { timing: 'steps(1,end)' });
+  // Dip the paddle under the rack's top bar on the way through, both directions.
+  const up = [26, -42], down = [28, 62], drop = down[1] - up[1];
+  const dips = [[19, 24, 38, 42], [48, 52, 66, 70]];
+  const hand = [[0, ...up]], pad = [[0, tr(0, 0)]];
+  for (const [a, b, c, d] of dips) {
+    hand.push([a, ...up], [b, ...down], [c, ...down], [d, ...up]);
+    pad.push([a, tr(0, 0)], [b, tr(down[0] - up[0], drop)], [c, tr(down[0] - up[0], drop)], [d, tr(0, 0)]);
+  }
+  hand.push([100, ...up]); pad.push([100, tr(0, 0)]);
+  const arm = arm2('hold', hand, { L1: 36, L2: 36 });
+  css += arm.css + kf('dip', pad, { timing: 'ease-in-out' });
   css += `.wobble{animation:wobble 1.3s ease-in-out infinite alternate;transform-origin:26px 104px}@keyframes wobble{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}`;
+  const top = 74; // underside of the rack's top bar
+  const frame = (dx, dy, fill) => `<g fill="${fill}"><rect x="${400 + dx}" y="${top - 12 + dy}" width="14" height="${338 - top + 12}"/><rect x="${500 + dx}" y="${top - 12 + dy}" width="14" height="${338 - top + 12}"/><rect x="${394 + dx}" y="${top - 14 + dy}" width="126" height="14" rx="3"/></g>`;
   return svg({
-    title: 'A competitor balances a paddle upright on one finger while walking through a squat rack and back',
+    title: 'A competitor balances a paddle upright on one finger, dips it under the top bar of a squat rack while walking through the rack, then turns and comes back',
     dur, css,
     body: `${room({ floor: C.rubber, floorLeft: { w: 250, fill: C.turf } })}
 <rect x="226" y="346" width="5" height="50" fill="${C.white}" opacity=".85"/>
-<g fill="${C.grey}"><rect x="400" y="24" width="14" height="314"/><rect x="500" y="24" width="14" height="314"/><rect x="396" y="18" width="122" height="12" rx="3"/>
-<rect x="388" y="330" width="38" height="8" rx="3"/><rect x="488" y="330" width="38" height="8" rx="3"/></g>
-<g fill="${C.steelDark}"><rect x="414" y="140" width="10" height="8"/><rect x="490" y="140" width="10" height="8"/></g>
+${frame(18, -14, C.steelDark)}
+<g fill="${C.steelDark}"><rect x="${418 + 18}" y="${130}" width="12" height="8"/><rect x="${484 + 18}" y="${130}" width="12" height="8"/></g>
 <g class="a walk"><g class="a flip">${figure({ legs: 'walk' })}
-<path d="M2 150 L22 132 L26 108" stroke="${C.yellow}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-<g class="wobble"><path d="M26 104 V20" stroke="${C.wood}" stroke-width="6" stroke-linecap="round"/><ellipse cx="26" cy="34" rx="10" ry="24" fill="${C.wood}" stroke="${C.woodDark}" stroke-width="2"/></g>
-</g></g>`,
+<g transform="translate(0 0)">${arm.svg}</g>
+<g class="a dip"><g class="wobble"><path d="M26 104 V20" stroke="${C.wood}" stroke-width="6" stroke-linecap="round"/><ellipse cx="26" cy="34" rx="10" ry="24" fill="${C.wood}" stroke="${C.woodDark}" stroke-width="2"/></g></g>
+</g></g>
+${frame(0, 0, C.grey)}
+<g fill="${C.grey}"><rect x="388" y="330" width="38" height="8" rx="3"/><rect x="488" y="330" width="38" height="8" rx="3"/></g>`,
   });
 };
 
