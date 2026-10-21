@@ -324,8 +324,8 @@ scenes['paddle-peril'] = () => {
 
 // ---------- Sort & Sweet: the competitor, behind the table, sorts four of each candy into its own small bowl ----------
 scenes['sort-and-sweet'] = () => {
-  const dur = 34, table = 250;
-  const bowls = [110, 195, 445, 530];
+  const dur = 7.5, table = 250;
+  const bowls = [222, 260, 380, 418];
   const candy = [
     c => `<circle r="6" fill="${c}"/><text y="2.5" text-anchor="middle" style="font:700 6px sans-serif;fill:#fff">S</text>`,
     () => `<rect x="-9" y="-4" width="18" height="8" rx="2" fill="#4a2c1d"/><rect x="-3" y="-4" width="6" height="8" fill="#3f8f6a"/>`,
@@ -334,46 +334,42 @@ scenes['sort-and-sweet'] = () => {
   ];
   const tint = [C.red, C.purple, C.orange, C.green];
   let seed = 7; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
-  let css = '', pieces = '';
-  // One bowl at a time: the competitor shuffles over once per bowl, then the arm does the reaching.
-  const order = [1, 0, 2, 3], bodyX = [185, 232, 408, 455], pick = [[262, 285], [270, 305], [335, 370], [355, 378]];
-  const P = sec => (sec / dur) * 100;
-  const hand = [], body = [[0, 320]];
-  let t = 1.2, n = 0;
-  for (const b of order) {
-    body.push([P(t), body[body.length - 1][1]], [P(t + 1.4), bodyX[b]]);
-    hand.push([P(t), 40, 50], [P(t + 1.4), 40, 50]);
-    t += 1.6;
-    for (let k = 0; k < 4; k++) {
-      const sx = pick[b][0] + rnd() * (pick[b][1] - pick[b][0]), sy = 194 + rnd() * 12, ex = bowls[b] - 18 + k * 12, ey = 216;
-      const bx = bodyX[b], mx = (sx + ex) / 2;
-      css += kf(`c${n}`, [[0, tr(sx, sy)], [P(t + 0.5), tr(sx, sy)], [P(t + 0.9), tr(mx, 168)], [P(t + 1.3), tr(ex, ey)], [100, tr(ex, ey)]], { timing: 'ease-in-out' });
-      hand.push([P(t + 0.5), sx - bx, sy - 4 - 150], [P(t + 0.9), mx - bx, 164 - 150], [P(t + 1.3), ex - bx, ey - 4 - 150]);
-      pieces += `<g class="a c${n}">${candy[b](tint[(k + b) % 4])}</g>`;
-      t += 1.5; n++;
-    }
+  let css = '', pieces = '', filled = '';
+  // The competitor stands still in the middle; the bowls are all within arm's reach.
+  // Each small bowl already holds three candies, so the loop shows the last one going into each.
+  const bx = 320, P = sec => (sec / dur) * 100;
+  const slot = (b, k) => [bowls[b] - 12 + k * 8, 218 - (k % 2) * 3];
+  for (let b = 0; b < 4; b++) for (let k = 0; k < 3; k++) {
+    const [x, y] = slot(b, k);
+    filled += `<g transform="translate(${x} ${y}) scale(.75)">${candy[b](tint[(k + b) % 4])}</g>`;
   }
-  hand.unshift([0, 40, 50]);
-  hand.push([P(t + 0.4), 40, 50], [100, 40, 50]);
-  body.push([P(t + 0.4), body[body.length - 1][1]], [P(t + 2), 320], [100, 320]);
-  css += kf('step', body.map(([p, x]) => [p, tr(x, 0)]), { timing: 'ease-in-out' });
-  const a = arm2('sort', hand, { L1: 56, L2: 56 });
+  const hand = [[0, 40, 50]];
+  let t = 0.8;
+  for (let b = 0; b < 4; b++) {
+    const sx = 290 + rnd() * 60, sy = 196 + rnd() * 8, [ex, ey] = slot(b, 3), mx = (sx + ex) / 2;
+    css += kf(`c${b}`, [[0, tr(sx, sy)], [P(t + 0.5), tr(sx, sy)], [P(t + 0.9), tr(mx, 170, 'scale(.9)')], [P(t + 1.3), tr(ex, ey, 'scale(.75)')], [100, tr(ex, ey, 'scale(.75)')]], { timing: 'ease-in-out' });
+    hand.push([P(t + 0.5), sx - bx, sy - 4 - 150], [P(t + 0.9), mx - bx, 166 - 150], [P(t + 1.3), ex - bx, ey - 4 - 150]);
+    pieces += `<g class="a c${b}">${candy[b](tint[(3 + b) % 4])}</g>`;
+    t += 1.5;
+  }
+  hand.push([P(t + 0.3), 40, 50], [100, 40, 50]);
+  const a = arm2('sort', hand, { L1: 60, L2: 60 });
   css += a.css;
-  css += windows('fade', [[0, 96]]);
+  css += windows('fade', [[0, 94]]);
   let decoys = '';
-  for (let d = 0; d < 8; d++) decoys += `<g transform="translate(${(262 + rnd() * 116).toFixed(1)} ${(196 + rnd() * 10).toFixed(1)})">${candy[d % 4](tint[d % 4])}</g>`;
-  const smallBowl = x => `<path d="M${x - 34} 222 H${x + 34} Q${x + 30} ${table} ${x} ${table} Q${x - 30} ${table} ${x - 34} 222 Z" fill="${C.cream}" stroke="${C.ink}" stroke-width="2"/>`;
+  for (let d = 0; d < 8; d++) decoys += `<g transform="translate(${(288 + rnd() * 64).toFixed(1)} ${(198 + rnd() * 8).toFixed(1)})">${candy[d % 4](tint[d % 4])}</g>`;
+  const smallBowl = x => `<path d="M${x - 20} 224 H${x + 20} Q${x + 18} ${table} ${x} ${table} Q${x - 18} ${table} ${x - 20} 224 Z" fill="${C.cream}" stroke="${C.ink}" stroke-width="2"/>`;
   return svg({
     title: 'Standing behind a table, a competitor sorts candy out of a big bowl into four small bowls, four of the same candy in each',
     dur, css,
     body: `${room()}
-<g class="a step">${figure({ legs: 'stand' })}</g>
+<g transform="translate(${bx} 0)">${figure({ legs: 'stand' })}</g>
 <rect x="50" y="${table}" width="540" height="12" rx="3" fill="${C.wood}"/>
 <rect x="70" y="262" width="12" height="74" fill="${C.woodDark}"/><rect x="558" y="262" width="12" height="74" fill="${C.woodDark}"/>
-${decoys}<g class="a fade">${pieces}</g>
-<path d="M240 204 H400 Q395 ${table} 320 ${table} Q245 ${table} 240 204 Z" fill="${C.blue}" stroke="${C.ink}" stroke-width="2"/>
+${decoys}${filled}<g class="a fade">${pieces}</g>
+<path d="M280 206 H360 Q357 ${table} 320 ${table} Q283 ${table} 280 206 Z" fill="${C.blue}" stroke="${C.ink}" stroke-width="2"/>
 ${bowls.map(smallBowl).join('')}
-<g class="a step">${a.svg}</g>`,
+<g transform="translate(${bx} 0)">${a.svg}</g>`,
   });
 };
 
