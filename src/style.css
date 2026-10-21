@@ -97,23 +97,6 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .button { display: inline-block; background: var(--accent); color: var(--accent-ink); font-weight: 800; padding: 10px 18px; border-radius: 999px; text-decoration: none; }
 .button:hover { filter: brightness(1.05); }
 
-.search { margin: 20px 0 8px; }
-.search label { display: block; font-weight: 700; margin-bottom: 6px; }
-.search input {
-  width: 100%; font: inherit; padding: 12px 14px 12px 42px; border-radius: 12px;
-  border: 2px solid var(--border); background: var(--surface) no-repeat 14px 50% / 18px
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E");
-  color: var(--text);
-}
-.search input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent); }
-.search-status { min-height: 1.4em; color: var(--muted); font-size: .92rem; margin: 6px 2px; }
-.search-results { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 8px; }
-.search-results a { display: block; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; color: var(--text); text-decoration: none; }
-.search-results a:hover { border-color: var(--accent); }
-.search-results strong { display: block; }
-.search-results .where { color: var(--muted); font-size: .85rem; }
-.search-results .snip { display: block; font-size: .93rem; margin-top: 2px; }
-mark { background: color-mix(in srgb, var(--accent) 55%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
 
 .section-title { margin: 28px 0 12px; }
 .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
@@ -163,10 +146,8 @@ mark { background: color-mix(in srgb, var(--accent) 55%, transparent); color: in
 .event-figure { margin: 8px 0 16px; }
 .event-figure img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: var(--radius); background: var(--surface-2); }
 .event-figure figcaption { color: var(--muted); font-size: .92rem; font-style: italic; margin-top: 6px; }
-.slideshow { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin: 0 0 16px; padding: 14px 16px 12px; }
-.slideshow::before { content: ""; display: block; height: 6px; margin: -14px -16px 12px; border-radius: var(--radius) var(--radius) 0 0; background: var(--stripe); }
-.slideshow h2 { margin: 0 0 10px; font-size: 1.15rem; text-transform: uppercase; letter-spacing: .02em; }
 .slideshow-intro p { margin: 0 0 10px; color: var(--muted); }
+.slideshow .rule-body { padding-top: 12px; padding-bottom: 12px; }
 .slide { margin: 0; }
 .slide-photo { background: var(--surface-2); border-radius: 10px; overflow: hidden; touch-action: pan-y; }
 .slide-photo img { display: block; width: 100%; max-height: 62vh; aspect-ratio: 1; object-fit: contain; margin: 0 auto; user-select: none; -webkit-user-drag: none; }
@@ -174,7 +155,6 @@ mark { background: color-mix(in srgb, var(--accent) 55%, transparent); color: in
 .slide-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
 .slide-btn { font: inherit; font-size: 1.5rem; line-height: 1; min-width: 48px; height: 44px; border-radius: 22px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; }
 .slide-btn:hover { border-color: var(--accent); }
-.slide-play { font-size: .95rem; }
 .slide-count { min-width: 64px; text-align: center; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
 .section-tools { display: flex; justify-content: flex-end; margin-bottom: 4px; }
 .link-button { font: inherit; font-size: .92rem; font-weight: 600; background: none; border: 0; color: var(--link); cursor: pointer; padding: 6px 4px; text-decoration: underline; text-underline-offset: 2px; }
@@ -229,7 +209,8 @@ mark { background: color-mix(in srgb, var(--accent) 55%, transparent); color: in
   * { transition: none !important; scroll-behavior: auto !important; }
 }
 @media print {
-  .topbar, .search, .section-tools, .pager, .footer,   .rule-section { break-inside: avoid; }
+  .topbar, .section-tools, .pager, .footer, .slide-controls { display: none; }
+  .rule-section { break-inside: avoid; }
   .rule-section:not([open]) > .rule-body { display: block; }
 }
 @media (max-width: 420px) {

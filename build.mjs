@@ -261,15 +261,6 @@ function homePage(site, events) {
   <p><a class="button" href="${link(base, 'rules/')}">Read the full rules</a></p>
 </section>
 
-<section class="search" role="search" aria-label="Search events and rules">
-  <label for="q">Search events and rules</label>
-  <div class="search-field">
-    <input id="q" type="search" placeholder="Try “keypad”, “grace period”, “No Rep”" autocomplete="off" spellcheck="false">
-  </div>
-  <p id="search-status" class="search-status" aria-live="polite"></p>
-  <ol id="search-results" class="search-results" hidden></ol>
-</section>
-
 <section id="events" aria-labelledby="events-h">
   <h2 id="events-h" class="section-title">Events</h2>
   <ul class="cards" id="cards">
@@ -302,11 +293,11 @@ function eventPage(site, e, prev, next) {
     <img src="${base}${e.imageUrl}" alt="${esc(e.imageIsPlaceholder ? '' : e.image_alt || `Animation: ${plain(md(e.objective || e.title))}`)}" width="640" height="400" decoding="async">
     ${e.caption ? `<figcaption>${mdInline(e.caption)}</figcaption>` : ''}
   </figure>
-  ${e.slides ? slideshow(e.slides, base) : ''}
   <div class="section-tools">
     <button type="button" class="link-button" data-toggle-all>Expand all</button>
   </div>
   ${sections}
+  ${e.slides ? slideshow(e.slides, base) : ''}
   <nav class="pager" aria-label="More events">
     ${prev ? `<a rel="prev" href="${link(base, `events/${prev.slug}/`)}"><span>Previous</span>${esc(prev.title)}</a>` : '<span></span>'}
     ${next ? `<a rel="next" href="${link(base, `events/${next.slug}/`)}"><span>Next</span>${esc(next.title)}</a>` : '<span></span>'}
@@ -320,8 +311,9 @@ function slideshow(show, base) {
   const first = show.items[0];
   if (!first) return '';
   const n = show.items.length;
-  return `<section class="slideshow" id="slideshow" aria-roledescription="carousel" aria-label="${esc(show.title)}" data-slideshow>
-  <h2>${esc(show.title)}</h2>
+  return `<details class="rule-section slideshow" id="slideshow">
+<summary><h2>${esc(show.title)}</h2></summary>
+<div class="rule-body" aria-roledescription="carousel" aria-label="${esc(show.title)}" data-slideshow>
   ${show.intro ? `<div class="slideshow-intro">${md(show.intro)}</div>` : ''}
   <figure class="slide" aria-live="polite">
     <div class="slide-photo"><img src="${base}${first.src}" alt="${esc(first.caption)}" width="800" height="800" decoding="async"></div>
@@ -330,11 +322,11 @@ function slideshow(show, base) {
   <div class="slide-controls">
     <button type="button" class="slide-btn" data-slide="prev" aria-label="Previous photo">&#8249;</button>
     <span class="slide-count"><span data-slide-num>1</span> / ${n}</span>
-    <button type="button" class="slide-btn slide-play" data-slide="play" aria-label="Pause slideshow" hidden>&#10074;&#10074;</button>
     <button type="button" class="slide-btn" data-slide="next" aria-label="Next photo">&#8250;</button>
   </div>
   <script type="application/json" data-slides>${JSON.stringify(show.items.map(s => ({ src: base + s.src, caption: s.caption }))).replace(/</g, '\\u003c')}</script>
-</section>`;
+</div>
+</details>`;
 }
 
 function rulesPage(site, siteSections, events) {
@@ -363,27 +355,6 @@ function notFoundPage(site) {
 <p><a class="button" href="${link('./', '')}">See all events</a></p></section>`;
   return layout({ site, base: './', title: 'Not found', body, current: '' }).replace('<head>\n',
     `<head>\n<script>document.write('<base href="' + (location.hostname.endsWith('github.io') ? '/' + location.pathname.split('/')[1] + '/' : '/') + '">')</script>\n`);
-}
-
-// ---------- search index ----------
-
-function searchIndex(site, siteSections, events) {
-  const docs = events.map(e => ({
-    t: e.title,
-    u: `events/${e.slug}/`,
-    p: e.points ?? null,
-    s: [
-      ...e.sections.filter(s => s.md).map(s => ({ h: s.heading, a: s.key, x: plain(md(s.md)) })),
-      ...(e.slides ? [{ h: e.slides.title, a: 'slideshow', x: e.slides.items.map(s => s.caption).join(' · ') }] : []),
-    ],
-  }));
-  docs.push({
-    t: 'How it works',
-    u: 'rules/',
-    p: null,
-    s: siteSections.map(s => ({ h: s.heading, a: slugify(s.heading), x: plain(md(s.md)) })),
-  });
-  return docs;
 }
 
 // ---------- build ----------
@@ -428,7 +399,6 @@ async function main() {
     background_color: '#1b1a17', theme_color: '#1b1a17',
     icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }],
   }, null, 2));
-  await writeFile('search-index.json', JSON.stringify(searchIndex(site, siteSections, events)));
 
   await writeFile('index.html', homePage(site, events));
   await writeFile('rules/index.html', rulesPage(site, siteSections, events));

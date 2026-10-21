@@ -1,4 +1,4 @@
-// Garage Games event guide: search, expand/collapse, offline support. No dependencies.
+// Garage Games event guide: expand/collapse, photo slideshow, offline support. No dependencies.
 (() => {
   const base = document.body.dataset.base || './';
   const explicitIndex = document.body.dataset.explicitIndex === 'true';
@@ -18,7 +18,7 @@
     sync();
   }
 
-  // Open a collapsed section when linked to directly (e.g. from a search result).
+  // Open a collapsed section when linked to directly.
   const openTarget = () => {
     const el = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
     if (el && el.tagName === 'DETAILS') { el.open = true; el.scrollIntoView(); }
@@ -32,28 +32,17 @@
     const img = box.querySelector('.slide-photo img');
     const cap = box.querySelector('.slide-caption');
     const num = box.querySelector('[data-slide-num]');
-    const playBtn = box.querySelector('[data-slide="play"]');
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let i = 0, timer = null, playing = !still;
+    let i = 0;
     const preload = k => { new Image().src = slides[(k + slides.length) % slides.length].src; };
     const show = k => {
       i = (k + slides.length) % slides.length;
       img.src = slides[i].src; img.alt = slides[i].caption;
       cap.textContent = slides[i].caption; num.textContent = i + 1;
-      preload(i + 1);
+      preload(i + 1); preload(i - 1);
     };
-    const schedule = () => { clearTimeout(timer); if (playing) timer = setTimeout(() => { show(i + 1); schedule(); }, 4000); };
-    const setPlaying = on => {
-      playing = on;
-      playBtn.innerHTML = on ? '&#10074;&#10074;' : '&#9654;';
-      playBtn.setAttribute('aria-label', on ? 'Pause slideshow' : 'Play slideshow');
-      schedule();
-    };
-    const step = d => { show(i + d); schedule(); };
+    const step = d => show(i + d);
     box.querySelector('[data-slide="prev"]').addEventListener('click', () => step(-1));
     box.querySelector('[data-slide="next"]').addEventListener('click', () => step(1));
-    playBtn.addEventListener('click', () => setPlaying(!playing));
-    playBtn.hidden = false;
     box.addEventListener('keydown', ev => {
       if (ev.key === 'ArrowLeft') step(-1);
       if (ev.key === 'ArrowRight') step(1);
@@ -65,85 +54,7 @@
       if (x0 !== null && Math.abs(ev.clientX - x0) > 40) step(ev.clientX < x0 ? 1 : -1);
       x0 = null;
     });
-    // Only advance while the slideshow is on screen.
-    new IntersectionObserver(([en]) => { if (en.isIntersecting) schedule(); else clearTimeout(timer); }).observe(box);
-    setPlaying(playing);
     preload(1);
-  }
-
-  // ---- Search ----
-  const input = document.getElementById('q');
-  if (input) {
-    const status = document.getElementById('search-status');
-    const results = document.getElementById('search-results');
-    const cards = [...document.querySelectorAll('#cards .card')];
-    let index = null;
-    let loading = null;
-
-    const norm = s => s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[’‘]/g, "'");
-    const escapeHtml = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const load = () => loading ||= fetch(base + 'search-index.json')
-      .then(r => r.json())
-      .then(docs => {
-        index = docs.map(d => ({ ...d, nt: norm(d.t), s: d.s.map(s => ({ ...s, nx: norm(s.x) })) }));
-      })
-      .catch(() => { status.textContent = 'Search is unavailable right now.'; });
-
-    // Highlight query terms in a short excerpt around the first hit.
-    const snippet = (text, ntext, terms) => {
-      let at = Math.min(...terms.map(t => ntext.indexOf(t)).filter(i => i >= 0));
-      if (!isFinite(at)) at = 0;
-      const start = Math.max(0, at - 50);
-      const end = Math.min(text.length, at + 110);
-      let out = escapeHtml(text.slice(start, end));
-      for (const t of terms) {
-        const re = new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-        out = out.replace(re, '<mark>$1</mark>');
-      }
-      return (start > 0 ? '…' : '') + out + (end < text.length ? '…' : '');
-    };
-
-    const run = () => {
-      const q = input.value.trim();
-      const terms = norm(q).split(/\s+/).filter(Boolean);
-      const url = new URL(location.href);
-      if (q) url.searchParams.set('q', q); else url.searchParams.delete('q');
-      history.replaceState(null, '', url);
-
-      if (!terms.length) {
-        results.hidden = true; results.innerHTML = ''; status.textContent = '';
-        cards.forEach(c => { c.hidden = false; });
-        return;
-      }
-      if (!index) { status.textContent = 'Loading…'; load().then(run); return; }
-
-      const hits = [];
-      for (const d of index) {
-        const all = d.nt + ' ' + d.s.map(s => s.nx).join(' ');
-        if (!terms.every(t => all.includes(t))) continue;
-        const titleHit = terms.some(t => d.nt.includes(t));
-        const best = d.s.find(s => terms.some(t => s.nx.includes(t)));
-        hits.push({ d, best, score: (titleHit ? 10 : 0) + d.s.filter(s => terms.some(t => s.nx.includes(t))).length });
-      }
-      hits.sort((a, b) => b.score - a.score);
-
-      const slugs = new Set(hits.map(h => h.d.u));
-      cards.forEach(c => { c.hidden = !slugs.has(`events/${c.dataset.slug}/`); });
-      results.innerHTML = hits.map(({ d, best }) => `<li><a href="${href(d.u)}${best ? '#' + best.a : ''}">
-        <strong>${escapeHtml(d.t)}</strong>
-        ${best ? `<span class="where">${escapeHtml(best.h)}</span><span class="snip">${snippet(best.x, best.nx, terms)}</span>` : ''}
-      </a></li>`).join('');
-      results.hidden = !hits.length;
-      status.textContent = hits.length
-        ? `${hits.length} ${hits.length === 1 ? 'match' : 'matches'} for “${q}”`
-        : `No matches for “${q}”. Try a shorter word.`;
-    };
-
-    let timer;
-    input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 120); });
-    input.addEventListener('focus', load, { once: true });
-    const initial = new URLSearchParams(location.search).get('q');
-    if (initial) { input.value = initial; run(); }
   }
 
   // ---- Offline caching ----
