@@ -20,7 +20,7 @@ All Emeralds spread to designated spots, all rings returned to bowl.
 
 Gather the 7 emeralds from around the garage and return them to the shrine. Then input 20 rings to defeat Robotnik.
 
-## Additional rules
+## Additional guidelines
 
 - There is no button for this event. Returning the final emerald starts the timer.
 - You may collect the emeralds at any time during your run.

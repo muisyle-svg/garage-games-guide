@@ -1,7 +1,7 @@
 ---
 title: Garage Games 2026
 tagline: Event Rules. More Like Guidelines Really.
-description: Rules and how-to for every Garage Games 2026 event. Works on your phone and offline.
+description: Guidelines and how-to for every Garage Games 2026 event. Works on your phone and offline.
 facts:
   - 13 events + a bonus round
   - 5 minutes
@@ -13,6 +13,10 @@ steps:
   - '**Finish events faster for more points!** You can leave any event and start a new one, but your clock keeps ticking.'
   - '**Clear all the events to trigger the bonus round.** Most points wins!'
 ---
+
+## The course
+
+[![Map of the garage showing where each event is](images/course.jpg)](images/course.jpg)
 
 ## The run
 
@@ -27,6 +31,8 @@ In most cases it will be obvious when you have completed the objective, and may 
 Your run ends automatically when your 5 minutes elapses. Button presses after the 5 minutes will have no effect.
 
 ## Buttons
+
+![An event button: a black box with a big red button, a status light, and the event's name above](images/button.jpg)
 
 Each station* has a button labeled with the sign for that event. When the run begins, all buttons lights will flash for the countdown, and then go solid red to indicate they have not yet been completed.
 

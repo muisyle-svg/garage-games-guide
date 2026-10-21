@@ -147,7 +147,7 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .event-figure img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: var(--radius); background: var(--surface-2); }
 .event-figure figcaption { color: var(--muted); font-size: .92rem; font-style: italic; margin-top: 6px; }
 .slideshow-intro p { margin: 0 0 10px; color: var(--muted); }
-.slideshow .rule-body { padding-top: 12px; padding-bottom: 12px; }
+.slideshow .guideline-body { padding-top: 12px; padding-bottom: 12px; }
 .slide { margin: 0; }
 .slide-photo { background: var(--surface-2); border-radius: 10px; overflow: hidden; touch-action: pan-y; }
 .slide-photo img { display: block; width: 100%; max-height: 62vh; aspect-ratio: 1; object-fit: contain; margin: 0 auto; user-select: none; -webkit-user-drag: none; }
@@ -159,16 +159,16 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .section-tools { display: flex; justify-content: flex-end; margin-bottom: 4px; }
 .link-button { font: inherit; font-size: .92rem; font-weight: 600; background: none; border: 0; color: var(--link); cursor: pointer; padding: 6px 4px; text-decoration: underline; text-underline-offset: 2px; }
 
-.rule-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin: 0 0 10px; }
-.rule-section > summary { list-style: none; cursor: pointer; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.rule-section > summary::-webkit-details-marker { display: none; }
-.rule-section > summary::after { content: ""; width: 10px; height: 10px; border-right: 3px solid var(--muted); border-bottom: 3px solid var(--muted); transform: rotate(45deg); transition: transform .15s; flex: none; margin-top: -4px; }
-.rule-section[open] > summary::after { transform: rotate(-135deg); margin-top: 4px; }
-.rule-section > summary h2 { margin: 0; font-size: 1.15rem; text-transform: uppercase; letter-spacing: .02em; }
-.rule-section > summary h2::before { content: ""; display: inline-block; width: 6px; height: .9em; background: var(--accent); margin-right: 10px; vertical-align: -1px; border-radius: 2px; }
-.rule-body { padding: 0 16px 6px; border-top: 1px dashed var(--border); }
-.rule-body ol, .rule-body ul { padding-left: 1.3em; }
-.rule-body li { margin: .3em 0; }
+.guideline-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin: 0 0 10px; }
+.guideline-section > summary { list-style: none; cursor: pointer; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.guideline-section > summary::-webkit-details-marker { display: none; }
+.guideline-section > summary::after { content: ""; width: 10px; height: 10px; border-right: 3px solid var(--muted); border-bottom: 3px solid var(--muted); transform: rotate(45deg); transition: transform .15s; flex: none; margin-top: -4px; }
+.guideline-section[open] > summary::after { transform: rotate(-135deg); margin-top: 4px; }
+.guideline-section > summary h2 { margin: 0; font-size: 1.15rem; text-transform: uppercase; letter-spacing: .02em; }
+.guideline-section > summary h2::before { content: ""; display: inline-block; width: 6px; height: .9em; background: var(--accent); margin-right: 10px; vertical-align: -1px; border-radius: 2px; }
+.guideline-body { padding: 0 16px 6px; border-top: 1px dashed var(--border); }
+.guideline-body ol, .guideline-body ul { padding-left: 1.3em; }
+.guideline-body li { margin: .3em 0; }
 .missing { color: var(--muted); font-style: italic; }
 .points-line { margin-bottom: .4em; }
 
@@ -178,10 +178,15 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .pager a span { display: block; font-size: .8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
 .pager a[rel="next"] { text-align: right; }
 
-/* Rules page */
-.rules { max-width: 760px; margin: 0 auto; }
-.rules section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 18px 10px; margin: 0 0 12px; }
-.rules section h2 { text-transform: uppercase; margin: 14px 0 6px; }
+/* Guidelines page */
+.guidelines { max-width: 760px; margin: 0 auto; }
+.guidelines section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 18px 10px; margin: 0 0 12px; }
+.guidelines section img { border-radius: 10px; }
+#the-course img { width: 100%; max-width: 640px; margin: 4px auto 12px; }
+#buttons img { width: 140px; float: right; margin: 0 0 10px 16px; }
+#buttons::after { content: ""; display: block; clear: both; }
+@media (max-width: 480px) { #buttons img { width: 110px; } }
+.guidelines section h2 { text-transform: uppercase; margin: 14px 0 6px; }
 .lineup { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
 /* One row per event: name, objective, scoring badges. On phones the objective drops under the name. */
 .lineup-item { padding: 10px 0; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: minmax(6rem, 1fr) auto; grid-template-areas: "title stats" "obj obj"; align-items: center; gap: 4px 12px; min-width: 0; }
@@ -201,7 +206,7 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .lineup .points { white-space: nowrap; }
 @media (max-width: 759px) { .lineup .stat-auto .stat-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
 @media (min-width: 760px) {
-  .rules #event-list { width: min(1040px, calc(100vw - 32px)); margin-left: 50%; transform: translateX(-50%); }
+  .guidelines #event-list { width: min(1040px, calc(100vw - 32px)); margin-left: 50%; transform: translateX(-50%); }
   .lineup .stats.compact { gap: 6px; }
   .lineup .stats.compact .stat { padding: 3px 8px 3px 6px; gap: 4px; }
   .lineup .stats.compact .stat-icon { width: 18px; height: 18px; }
@@ -231,8 +236,8 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 }
 @media print {
   .topbar, .section-tools, .pager, .footer, .slide-controls { display: none; }
-  .rule-section { break-inside: avoid; }
-  .rule-section:not([open]) > .rule-body { display: block; }
+  .guideline-section { break-inside: avoid; }
+  .guideline-section:not([open]) > .guideline-body { display: block; }
 }
 @media (max-width: 420px) {
   .brand { font-size: .92rem; }

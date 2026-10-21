@@ -20,7 +20,7 @@ All nails in the box, hammer on the wood, safety glasses returned.
 
 Put on the safety glasses, grab a nail, and nail it completely into the board.
 
-## Additional rules
+## Additional guidelines
 
 - You must be wearing the safety glasses to start the event.
 - You may not place the nail in any previous hole.

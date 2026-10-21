@@ -4,10 +4,10 @@
   const explicitIndex = document.body.dataset.explicitIndex === 'true';
   const href = u => base + (explicitIndex ? u.replace(/\/$/, '/index.html') : u);
 
-  // ---- Expand / collapse all rule sections ----
+  // ---- Expand / collapse all guideline sections ----
   const toggle = document.querySelector('[data-toggle-all]');
   if (toggle) {
-    const sections = [...document.querySelectorAll('details.rule-section')];
+    const sections = [...document.querySelectorAll('details.guideline-section')];
     const sync = () => { toggle.textContent = sections.every(d => d.open) ? 'Collapse all' : 'Expand all'; };
     toggle.addEventListener('click', () => {
       const open = !sections.every(d => d.open);

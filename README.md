@@ -1,6 +1,6 @@
 # Garage Games event guide
 
-A static, mobile-first website for the Garage Games event rules. Visitors need no account; the site works offline after the first visit.
+A static, mobile-first website for the Garage Games event guidelines. Visitors need no account; the site works offline after the first visit.
 
 Event text lives in `content/`. The website code lives in `src/` and `build.mjs`. You can edit events without touching code.
 
@@ -22,7 +22,7 @@ image: wall-d.svg      # file in content/images/
 ## Objective
 ## Setup
 ## Gameplay
-## Additional rules
+## Additional guidelines
 ```
 
 - Use only the headings you have text for; empty sections are left out.
@@ -30,7 +30,7 @@ image: wall-d.svg      # file in content/images/
 - Sections appear in this order: Objective, Gameplay, Additional guidelines and clarifications, then Setup/Reset (collapsed). Every page has an "Expand all" button.
 - Optional fields: `subtitle` (small label above the title), `bonus: true` (shows a Bonus badge instead of points), `image_alt` (otherwise the objective is used).
 
-The homepage steps, the "How it works" page and the general rules are in `content/site.md`.
+The homepage steps, the "How it works" page and the general guidelines are in `content/site.md`.
 
 ## Animations
 

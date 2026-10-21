@@ -18,7 +18,7 @@ const EXPLICIT_INDEX = process.argv.includes('--explicit-index');
 const SECTIONS = [
   { key: 'objective', heading: 'Objective', open: true },
   { key: 'gameplay', heading: 'Gameplay', open: true },
-  { key: 'additional-rules', heading: 'Additional guidelines and clarifications', open: true, aliases: ['additional-guidelines-and-clarifications'] },
+  { key: 'additional-guidelines', heading: 'Additional guidelines and clarifications', open: true, aliases: ['additional-guidelines-and-clarifications'] },
   { key: 'setup', heading: 'Setup/Reset', open: false, aliases: ['setup-reset', 'reset'] },
 ];
 
@@ -127,10 +127,19 @@ async function fileVersion(rel) {
   return crypto.createHash('sha1').update(await fs.readFile(path.join(OUT, rel))).digest('hex').slice(0, 8);
 }
 
+// Images placed in content/site.md as images/<file>: point them at the right folder with a ?v= version.
+const IMAGE_VERSIONS = new Map();
+const siteImages = (html, base) => html.replace(/<a href="images\/([^"?]+)"/g, (m, f) =>
+  `<a href="${base}images/${f}${IMAGE_VERSIONS.has(f) ? `?v=${IMAGE_VERSIONS.get(f)}` : ''}"`).replace(/(<img[^>]*?) src="images\/([^"?]+)"/g, (m, pre, f) =>
+  `${pre} src="${base}images/${f}${IMAGE_VERSIONS.has(f) ? `?v=${IMAGE_VERSIONS.get(f)}` : ''}" loading="lazy" decoding="async"`);
+
 async function prepareImages(events) {
   await fs.mkdir(path.join(OUT, 'images'), { recursive: true });
   const srcDir = path.join(CONTENT, 'images');
   if (await exists(srcDir)) await fs.cp(srcDir, path.join(OUT, 'images'), { recursive: true });
+  for (const f of await fs.readdir(path.join(OUT, 'images'))) {
+    if (/\.(jpe?g|png|webp|gif|svg|avif)$/i.test(f)) IMAGE_VERSIONS.set(f, await fileVersion(`images/${f}`));
+  }
   for (const [i, e] of events.entries()) {
     if (e.image && await exists(path.join(srcDir, e.image))) {
       e.imageUrl = `images/${e.image}?v=${await fileVersion(`images/${e.image}`)}`;
@@ -189,7 +198,7 @@ function layout({ site, base, title, description, body, current }) {
 <header class="topbar">
   <a class="brand" href="${link(base, '')}"><span class="brand-mark" aria-hidden="true"></span>${esc(site.title)}</a>
   <nav aria-label="Main"><ul>
-    <li><a href="${link(base, 'rules/')}"${current === 'rules' ? ' aria-current="page"' : ''}>How it works</a></li>
+    <li><a href="${link(base, 'guidelines/')}"${current === 'guidelines' ? ' aria-current="page"' : ''}>How it works</a></li>
     <li><a href="${link(base, '')}#events"${current === 'home' ? ' aria-current="page"' : ''}>Events</a></li>
   </ul></nav>
 </header>
@@ -258,7 +267,7 @@ function homePage(site, events) {
 <section class="howto" aria-labelledby="howto-h">
   <h2 id="howto-h">How it works</h2>
   <ol class="steps">${steps}</ol>
-  <p><a class="button" href="${link(base, 'rules/')}">Read the full rules</a></p>
+  <p><a class="button" href="${link(base, 'guidelines/')}">Read the full guidelines</a></p>
 </section>
 
 <section id="events" aria-labelledby="events-h">
@@ -275,9 +284,9 @@ function eventPage(site, e, prev, next) {
   const sections = e.sections.map(s => {
     const id = s.key;
     const inner = md(s.md);
-    return `<details class="rule-section" id="${id}"${s.open ? ' open' : ''}>
+    return `<details class="guideline-section" id="${id}"${s.open ? ' open' : ''}>
 <summary><h2>${esc(s.heading)}</h2></summary>
-<div class="rule-body">${inner}</div>
+<div class="guideline-body">${inner}</div>
 </details>`;
   }).join('\n');
 
@@ -311,9 +320,9 @@ function slideshow(show, base) {
   const first = show.items[0];
   if (!first) return '';
   const n = show.items.length;
-  return `<details class="rule-section slideshow" id="slideshow">
+  return `<details class="guideline-section slideshow" id="slideshow">
 <summary><h2>${esc(show.title)}</h2></summary>
-<div class="rule-body" aria-roledescription="carousel" aria-label="${esc(show.title)}" data-slideshow>
+<div class="guideline-body" aria-roledescription="carousel" aria-label="${esc(show.title)}" data-slideshow>
   ${show.intro ? `<div class="slideshow-intro">${md(show.intro)}</div>` : ''}
   <figure class="slide" aria-live="polite">
     <div class="slide-photo"><img src="${base}${first.src}" alt="${esc(first.caption)}" width="800" height="800" decoding="async"></div>
@@ -329,7 +338,7 @@ function slideshow(show, base) {
 </details>`;
 }
 
-function rulesPage(site, siteSections, events) {
+function guidelinesPage(site, siteSections, events) {
   const base = '../';
   const items = events.map(e => `<li class="lineup-item">
   <a class="lineup-title" href="${link(base, `events/${e.slug}/`)}">${esc(e.title)}</a>
@@ -337,15 +346,15 @@ function rulesPage(site, siteSections, events) {
   ${stats(e, true)}
 </li>`).join('\n');
   const body = `
-<article class="rules">
+<article class="guidelines">
   <h1>How it works</h1>
-  ${siteSections.map(s => `<section id="${slugify(s.heading)}"><h2>${esc(s.heading)}</h2>${md(s.md)}</section>`).join('\n')}
+  ${siteSections.map(s => `<section id="${slugify(s.heading)}"><h2>${esc(s.heading)}</h2>${siteImages(md(s.md), base)}</section>`).join('\n')}
   <section id="event-list">
     <h2>Event list</h2>
     <ol class="lineup">${items}</ol>
   </section>
 </article>`;
-  return layout({ site, base, title: 'How it works', body, current: 'rules' });
+  return layout({ site, base, title: 'How it works', body, current: 'guidelines' });
 }
 
 function notFoundPage(site) {
@@ -401,15 +410,17 @@ async function main() {
   }, null, 2));
 
   await writeFile('index.html', homePage(site, events));
-  await writeFile('rules/index.html', rulesPage(site, siteSections, events));
+  await writeFile('guidelines/index.html', guidelinesPage(site, siteSections, events));
   await writeFile('404.html', notFoundPage(site));
+  // The How it works page moved from rules/ to guidelines/; send old links and bookmarks there.
+  await writeFile('rules/index.html', '<!doctype html><meta charset="utf-8"><title>Moved</title><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0; url=../guidelines/"><link rel="canonical" href="../guidelines/"><a href="../guidelines/">How it works</a>');
   for (const [i, e] of events.entries()) {
     await writeFile(`events/${e.slug}/index.html`, eventPage(site, e, events[i - 1], events[i + 1]));
   }
   await writeFile('.nojekyll', '');
 
   // Service worker: precache every built file; the cache name changes whenever any file does.
-  const files = (await listFiles(OUT)).filter(f => !f.startsWith('.') && f !== '404.html').sort();
+  const files = (await listFiles(OUT)).filter(f => !f.startsWith('.') && f !== '404.html' && f !== 'rules/index.html').sort();
   const hash = crypto.createHash('sha1');
   for (const f of files) hash.update(f).update(await fs.readFile(path.join(OUT, f)));
   const precache = [];

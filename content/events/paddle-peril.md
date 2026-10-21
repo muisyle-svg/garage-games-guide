@@ -20,7 +20,7 @@ Paddle on the wall.
 
 Take the paddle off the wall and balance it vertically on one or more fingers or in your palm while on the turf and behind the line. While continuously balancing the paddle, walk onto the rubber, through the squat rack, then turn around and return to the turf.
 
-## Additional rules
+## Additional guidelines
 
 - You may not cup or squeeze the end of the paddle in your fingers/palm in any way.
 - Your entire body and the paddle must fully break the plane of the squat rack before returning.
