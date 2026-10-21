@@ -279,7 +279,7 @@ function homePage(site, events) {
   return layout({ site, base, title: '', body, current: 'home' });
 }
 
-function eventPage(site, e, prev, next) {
+function eventPage(site, e, prev, next, events) {
   const base = '../../';
   const sections = e.sections.map(s => {
     const id = s.key;
@@ -307,6 +307,7 @@ function eventPage(site, e, prev, next) {
   </div>
   ${sections}
   ${e.slides ? slideshow(e.slides, base) : ''}
+  ${box('all-events', 'All events', lineup(events, base, e.slug), false)}
   <nav class="pager" aria-label="More events">
     ${prev ? `<a rel="prev" href="${link(base, `events/${prev.slug}/`)}"><span>Previous</span>${esc(prev.title)}</a>` : '<span></span>'}
     ${next ? `<a rel="next" href="${link(base, `events/${next.slug}/`)}"><span>Next</span>${esc(next.title)}</a>` : '<span></span>'}
@@ -344,13 +345,15 @@ const box = (id, heading, html, open = true) => `<details class="guideline-secti
 <div class="guideline-body">${html}</div>
 </details>`;
 
-function guidelinesPage(site, siteSections, events) {
-  const base = '../';
-  const items = events.map(e => `<li class="lineup-item">
-  <a class="lineup-title" href="${link(base, `events/${e.slug}/`)}">${esc(e.title)}</a>
+// Every event on one row each: name, objective, scoring badges. `current` marks the page you're on.
+const lineup = (events, base, current) => `<ol class="lineup">${events.map(e => `<li class="lineup-item">
+  <a class="lineup-title" href="${link(base, `events/${e.slug}/`)}"${e.slug === current ? ' aria-current="page"' : ''}>${esc(e.title).replace(/-/g, '\u2011')}</a>
   ${e.objective ? `<div class="lineup-objective">${md(e.objective)}</div>` : ''}
   ${stats(e, true)}
-</li>`).join('\n');
+</li>`).join('\n')}</ol>`;
+
+function guidelinesPage(site, siteSections, events) {
+  const base = '../';
   const body = `
 <article class="guidelines">
   <h1>How it works</h1>
@@ -359,7 +362,7 @@ function guidelinesPage(site, siteSections, events) {
   </div>
   ${[
     ...siteSections.map(s => box(slugify(s.heading), s.heading, siteImages(md(s.md), base))),
-    box('event-list', 'Event list', `<ol class="lineup">${items}</ol>`),
+    box('event-list', 'Event list', lineup(events, base)),
   ].join('\n')}
 </article>`;
   return layout({ site, base, title: 'How it works', body, current: 'guidelines' });
@@ -423,7 +426,7 @@ async function main() {
   // The How it works page moved from rules/ to guidelines/; send old links and bookmarks there.
   await writeFile('rules/index.html', '<!doctype html><meta charset="utf-8"><title>Moved</title><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0; url=../guidelines/"><link rel="canonical" href="../guidelines/"><a href="../guidelines/">How it works</a>');
   for (const [i, e] of events.entries()) {
-    await writeFile(`events/${e.slug}/index.html`, eventPage(site, e, events[i - 1], events[i + 1]));
+    await writeFile(`events/${e.slug}/index.html`, eventPage(site, e, events[i - 1], events[i + 1], events));
   }
   await writeFile('.nojekyll', '');
 
