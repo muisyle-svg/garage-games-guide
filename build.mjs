@@ -220,7 +220,7 @@ const ICON = {
   hit: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/>',
 };
 const icon = k => `<svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
-const stat = (k, value, label, title) => `<li class="stat" title="${esc(title)}">${icon(k)}<span class="stat-text"><span class="stat-value">${value}</span><span class="stat-label">${label}</span></span></li>`;
+const stat = (k, value, label, title) => `<li class="stat stat-${k}" title="${esc(title)}">${icon(k)}<span class="stat-text"><span class="stat-value">${value}</span><span class="stat-label">${label}</span></span></li>`;
 
 // Points bubble plus scoring badges for the top of an event page.
 function stats(e, compact = false) {

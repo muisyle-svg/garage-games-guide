@@ -183,11 +183,32 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .rules section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 18px 10px; margin: 0 0 12px; }
 .rules section h2 { text-transform: uppercase; margin: 14px 0 6px; }
 .lineup { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
-.lineup-item { padding: 14px 0; border-bottom: 1px solid var(--border); display: grid; gap: 6px; min-width: 0; }
+/* One row per event: name, objective, scoring badges. On phones the objective drops under the name. */
+.lineup-item { padding: 10px 0; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: minmax(6rem, 1fr) auto; grid-template-areas: "title stats" "obj obj"; align-items: center; gap: 4px 12px; min-width: 0; }
 .lineup-item:last-child { border-bottom: 0; }
-.lineup-title { font: 800 1.15rem/1.2 var(--font-display); text-transform: uppercase; text-decoration: none; }
+.lineup-title { grid-area: title; font: 800 1.05rem/1.2 var(--font-display); text-transform: uppercase; text-decoration: none; }
 .lineup-title:hover { text-decoration: underline; }
+.lineup-objective { grid-area: obj; font-size: .93rem; color: var(--muted); }
 .lineup-objective p { margin: 0; }
+.lineup .stats.compact { grid-area: stats; flex-wrap: nowrap; justify-content: flex-end; }
+.lineup .stat-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.lineup .stats.compact { gap: 4px; }
+.lineup .stats.compact .stat { padding: 2px 7px 2px 5px; gap: 3px; }
+.lineup .stats.compact .stat-icon { width: 15px; height: 15px; }
+.lineup .stats.compact .stat-value { font-size: .8rem; }
+.lineup .points { font-size: .85rem; padding-left: 8px; padding-right: 8px; }
+.lineup .stats.compact .stat-value { white-space: nowrap; }
+.lineup .points { white-space: nowrap; }
+@media (max-width: 759px) { .lineup .stat-auto .stat-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+@media (min-width: 760px) {
+  .rules #event-list { width: min(1040px, calc(100vw - 32px)); margin-left: 50%; transform: translateX(-50%); }
+  .lineup .stats.compact { gap: 6px; }
+  .lineup .stats.compact .stat { padding: 3px 8px 3px 6px; gap: 4px; }
+  .lineup .stats.compact .stat-icon { width: 18px; height: 18px; }
+  .lineup .stats.compact .stat-value { font-size: .9rem; }
+  .lineup .points { font-size: 1rem; }
+  .lineup-item { grid-template-columns: 15rem 1fr auto; grid-template-areas: "title obj stats"; padding: 8px 0; }
+}
 .stats.compact { gap: 6px; }
 .stats.compact .stat { padding: 3px 10px 3px 7px; gap: 6px; }
 .stats.compact .stat-icon { width: 18px; height: 18px; }
