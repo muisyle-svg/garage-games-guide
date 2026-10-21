@@ -180,13 +180,12 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 
 /* Guidelines page */
 .guidelines { max-width: 760px; margin: 0 auto; }
-.guidelines section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 18px 10px; margin: 0 0 12px; }
-.guidelines section img { border-radius: 10px; }
+.guidelines .guideline-body { padding-top: 10px; }
+.guidelines .guideline-body img { border-radius: 10px; }
 #the-course img { width: 100%; max-width: 640px; margin: 4px auto 12px; }
 #buttons img { width: 140px; float: right; margin: 0 0 10px 16px; }
-#buttons::after { content: ""; display: block; clear: both; }
+#buttons .guideline-body::after { content: ""; display: block; clear: both; }
 @media (max-width: 480px) { #buttons img { width: 110px; } }
-.guidelines section h2 { text-transform: uppercase; margin: 14px 0 6px; }
 .lineup { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
 /* One row per event: name, objective, scoring badges. On phones the objective drops under the name. */
 .lineup-item { padding: 10px 0; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: minmax(6rem, 1fr) auto; grid-template-areas: "title stats" "obj obj"; align-items: center; gap: 4px 12px; min-width: 0; }

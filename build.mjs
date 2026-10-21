@@ -338,6 +338,12 @@ function slideshow(show, base) {
 </details>`;
 }
 
+// A collapsible box, open to start (the same style as the sections on event pages).
+const box = (id, heading, html, open = true) => `<details class="guideline-section" id="${id}"${open ? ' open' : ''}>
+<summary><h2>${esc(heading)}</h2></summary>
+<div class="guideline-body">${html}</div>
+</details>`;
+
 function guidelinesPage(site, siteSections, events) {
   const base = '../';
   const items = events.map(e => `<li class="lineup-item">
@@ -348,11 +354,13 @@ function guidelinesPage(site, siteSections, events) {
   const body = `
 <article class="guidelines">
   <h1>How it works</h1>
-  ${siteSections.map(s => `<section id="${slugify(s.heading)}"><h2>${esc(s.heading)}</h2>${siteImages(md(s.md), base)}</section>`).join('\n')}
-  <section id="event-list">
-    <h2>Event list</h2>
-    <ol class="lineup">${items}</ol>
-  </section>
+  <div class="section-tools">
+    <button type="button" class="link-button" data-toggle-all>Collapse all</button>
+  </div>
+  ${[
+    ...siteSections.map(s => box(slugify(s.heading), s.heading, siteImages(md(s.md), base))),
+    box('event-list', 'Event list', `<ol class="lineup">${items}</ol>`),
+  ].join('\n')}
 </article>`;
   return layout({ site, base, title: 'How it works', body, current: 'guidelines' });
 }
