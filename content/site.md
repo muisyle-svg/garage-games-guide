@@ -17,6 +17,7 @@ steps:
 ## The course
 
 [![Map of the garage showing where each event is](images/course.jpg)](images/course.jpg)
+The locations depicted above are the approximate competition zones, NOT the locations of the buttons. Additional lines, scoring zones, and restriction zones are not indicated.
 
 ## The run
 
@@ -65,6 +66,7 @@ Top scoring competitors may compete in an additional playoff round to determine 
 
 ## General guidelines and other information
 
+- **ALL GUIDELINES ARE SUBJECT TO CHANGE UP TO AND INCLUDING THE DAY OF THE EVENT AND MAY NOT BE UPDATED HERE**
 - Please help clear/reset the course after each competitor.
 - You may spectate from anywhere inside or out of the garage, as long as you stay clear of the competitors/judge.
 - Assistants may advise on strategy but **may not touch or influence any event**.
