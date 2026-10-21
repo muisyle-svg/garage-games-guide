@@ -434,30 +434,48 @@ ${cups.filter(x => x !== 375).map(cup).join('')}<g class="a jiggle">${cup(375)}<
   });
 };
 
-// ---------- Bocce the Moon: rolling a steel ball up two rails and dropping it in the green hole ----------
+// ---------- Bocce the Moon: "Shoot the Moon" — guiding a steel ball up the rods from the low far end toward the player ----------
 scenes['bocce-the-moon'] = () => {
-  const dur = 7;
-  const spread = [[0, 0], [8, 0], [14, 3], [18, 0], [24, 0], [30, 3], [34, 0], [40, 0], [46, 3], [50, 0], [56, 0], [60, 2.4], [64, 0], [68, 0], [72, 7], [88, 7], [94, 0], [100, 0]];
-  let css = kf('lrail', spread.map(([p, a]) => [p, rot(a)]), { timing: 'ease-in-out', origin: '306px 40px' });
-  css += kf('rrail', spread.map(([p, a]) => [p, rot(-a)]), { timing: 'ease-in-out', origin: '334px 40px' });
-  const ys = [[0, 312], [8, 312], [14, 262], [24, 262], [30, 196], [40, 196], [46, 130], [56, 130], [60, 80], [72, 80], [74, 80], [100, 80]];
-  css += kf('ball', ys.map(([p, y]) => [p, tr(0, y)]), { timing: 'ease-in-out' });
-  css += kf('drop', [[0, 'transform:scale(1)'], [72, 'transform:scale(1)'], [76, 'transform:scale(.2)'], [100, 'transform:scale(.2)']], { timing: 'ease-in' });
-  css += '.drop{transform-box:fill-box;transform-origin:center}';
-  css += windows('ballv', [[0, 76]]) + windows('glow', [[76, 92]]);
-  const hole = (y, ring) => `<circle cx="320" cy="${y}" r="16" fill="${ring}"/><circle cx="320" cy="${y}" r="10" fill="${C.ink}"/>`;
-  const handle = (x1, x2) => `<path d="M${x1} 330 L${x2} 410" stroke="${C.yellow}" stroke-width="11" stroke-linecap="round"/><circle cx="${x1}" cy="330" r="8" fill="${C.yellow}"/>`;
+  const dur = 8;
+  // Looking down the board from behind the player: far (low) end at the top of the frame, near (high) end at the bottom.
+  const farY = 64, nearY = 300, at = t => farY + (nearY - farY) * t, size = t => 0.5 + 0.7 * t;
+  const half = t => 60 + 120 * t; // half-width of the board at depth t
+  const holes = [[0.3, '10', C.red], [0.5, '25', C.cream], [0.7, '50', C.blue], [0.9, '100', C.green]];
+  let board = `<path d="M${320 - half(0)} ${farY - 8} H${320 + half(0)} L${320 + half(1)} ${nearY + 10} H${320 - half(1)} Z" fill="${C.wood}" stroke="${C.woodDark}" stroke-width="4" stroke-linejoin="round"/>`;
+  holes.forEach(([t, label, ring]) => {
+    const y = at(t), k = size(t);
+    board += `<ellipse cx="320" cy="${y}" rx="${17 * k}" ry="${8 * k}" fill="${ring}"/><ellipse cx="320" cy="${y}" rx="${11 * k}" ry="${5 * k}" fill="${C.ink}"/>`
+      + `<text x="${320 + half(t) * 0.55}" y="${y + 6 * k}" text-anchor="middle" style="font:800 ${(20 * k).toFixed(1)}px system-ui,sans-serif;fill:${C.ink}" opacity=".75">${label}</text>`;
+  });
+  // The rods pivot together at the far end; spreading the handles widens the gap so the ball rolls toward the player.
+  const spread = [[0, 0], [6, 0], [12, 3], [17, 0], [22, 0], [28, 3], [33, 0], [38, 0], [44, 3], [49, 0], [54, 0], [60, 3], [65, 0], [70, 0], [74, 6], [90, 6], [95, 0], [100, 0]];
+  let css = kf('lrod', spread.map(([p, a]) => [p, rot(a)]), { timing: 'ease-in-out', origin: `316px ${farY - 4}px` });
+  css += kf('rrod', spread.map(([p, a]) => [p, rot(-a)]), { timing: 'ease-in-out', origin: `324px ${farY - 4}px` });
+  const ts = [[0, 0.04], [6, 0.04], [12, 0.22], [22, 0.22], [28, 0.42], [38, 0.42], [44, 0.62], [54, 0.62], [60, 0.9], [100, 0.9]];
+  css += kf('ball', ts.map(([p, t]) => [p, tr(0, at(t), `scale(${size(t).toFixed(3)})`)]), { timing: 'ease-in-out' });
+  css += '.ball{transform-box:fill-box;transform-origin:center}';
+  css += kf('drop', [[0, op(1)], [72, op(1)], [76, op(0)], [100, op(0)]]);
+  css += windows('glow', [[76, 92]]);
+  const nearL = 300, nearR = 340; // rod x positions at the handles
+  const rod = (x0, x1) => `<path d="M${x0} ${farY - 4} L${x1} ${nearY + 18}" stroke="${C.steel}" stroke-width="5" stroke-linecap="round"/><path d="M${x0} ${farY - 4} L${x1} ${nearY + 18}" stroke="#fff" stroke-width="1.5" opacity=".5"/>`;
+  const handle = (x, dx) => `<rect x="${x - 9}" y="${nearY + 14}" width="18" height="40" rx="7" fill="${C.woodDark}" transform="rotate(${dx} ${x} ${nearY + 14})"/>`;
+  // The player, seen from behind at the near end: head and shoulders, both hands on the handles.
+  const armPath = (hx, sx) => `<path d="M${hx} ${nearY + 40} Q${(hx + sx) / 2 + (sx > 320 ? 14 : -14)} ${nearY + 70} ${sx} 392" stroke="${C.yellow}" stroke-width="12" stroke-linecap="round" fill="none"/><circle cx="${hx}" cy="${nearY + 38}" r="9" fill="${C.yellow}"/>`;
   return svg({
-    title: 'A competitor spreads and closes two long steel rails to roll a ball uphill, then drops it into the green hole',
+    title: 'Shoot the Moon: a competitor at the raised near end of a wooden board spreads two steel rods so a ball rolls up from the far low end toward them, then drops it into the 100 hole',
     dur, css,
-    body: `${room()}
-<rect x="224" y="30" width="192" height="300" rx="8" fill="${C.wood}" stroke="${C.woodDark}" stroke-width="4"/>
-${hole(80, C.green)}${hole(150, C.blue)}${hole(215, C.red)}${hole(272, C.cream)}
-<g class="a glow"><circle cx="320" cy="80" r="26" fill="none" stroke="${C.green}" stroke-width="5"/></g>
-<g class="a ballv"><g class="a ball"><circle class="a drop" cx="320" cy="0" r="10" fill="${C.steel}" stroke="${C.ink}" stroke-width="1.5"/></g></g>
-<g class="a lrail"><path d="M306 40 L294 330" stroke="${C.steelDark}" stroke-width="7" stroke-linecap="round"/>${handle(294, 262)}</g>
-<g class="a rrail"><path d="M334 40 L346 330" stroke="${C.steelDark}" stroke-width="7" stroke-linecap="round"/>${handle(346, 378)}</g>
-<rect x="296" y="30" width="48" height="12" rx="4" fill="${C.grey}"/>`,
+    body: `<rect width="640" height="400" fill="${C.floor}"/>
+<rect width="640" height="40" fill="${C.wall}"/><rect y="36" width="640" height="8" fill="url(#hazard)"/>
+<g fill="${C.ink}" opacity=".35"><ellipse cx="320" cy="${farY - 2}" rx="80" ry="8"/></g>
+<path d="M${320 - half(1) + 18} ${nearY + 10} l-8 90 h16 l4 -90 Z M${320 + half(1) - 18} ${nearY + 10} l8 90 h-16 l-4 -90 Z" fill="${C.woodDark}"/>
+${board}
+<g class="a glow"><ellipse cx="320" cy="${at(0.9)}" rx="${26 * size(0.9)}" ry="${13 * size(0.9)}" fill="none" stroke="${C.green}" stroke-width="4"/></g>
+<g class="a drop"><circle class="a ball" cx="320" cy="0" r="10" fill="${C.steel}" stroke="${C.ink}" stroke-width="1.5"/><circle class="a ball" cx="317" cy="-3" r="2.5" fill="#fff" opacity=".8"/></g>
+<rect x="306" y="${farY - 12}" width="28" height="12" rx="3" fill="${C.grey}"/>
+<g class="a lrod">${rod(316, nearL)}${handle(nearL, 8)}${armPath(nearL - 2, 270)}</g>
+<g class="a rrod">${rod(324, nearR)}${handle(nearR, -8)}${armPath(nearR + 2, 370)}</g>
+<path d="M262 400 Q262 372 320 368 Q378 372 378 400 Z" fill="${C.yellow}"/>
+<circle cx="320" cy="372" r="24" fill="${C.yellow}"/><path d="M297 368 a23 23 0 0 1 46 0 a26 16 0 0 0 -46 0" fill="${C.woodDark}"/>`,
   });
 };
 
