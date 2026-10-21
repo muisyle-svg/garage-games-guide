@@ -189,9 +189,17 @@ mark { background: color-mix(in srgb, var(--accent) 55%, transparent); color: in
 .rules { max-width: 760px; margin: 0 auto; }
 .rules section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 18px 10px; margin: 0 0 12px; }
 .rules section h2 { text-transform: uppercase; margin: 14px 0 6px; }
-.lineup { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.lineup th, .lineup td { padding: 8px 4px; border-bottom: 1px solid var(--border); text-align: left; }
-.lineup .num { text-align: right; }
+.lineup { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.lineup-item { padding: 14px 0; border-bottom: 1px solid var(--border); display: grid; gap: 6px; min-width: 0; }
+.lineup-item:last-child { border-bottom: 0; }
+.lineup-title { font: 800 1.15rem/1.2 var(--font-display); text-transform: uppercase; text-decoration: none; }
+.lineup-title:hover { text-decoration: underline; }
+.lineup-objective p { margin: 0; }
+.stats.compact { gap: 6px; }
+.stats.compact .stat { padding: 3px 10px 3px 7px; gap: 6px; }
+.stats.compact .stat-icon { width: 18px; height: 18px; }
+.stats.compact .stat-value { font-size: .9rem; }
+.stats.compact .stat-label { font-size: .64rem; }
 
 .footer { border-top: 1px solid var(--border); padding: 18px 16px 28px; text-align: center; color: var(--muted); font-size: .88rem; }
 .footer p { margin: 2px 0; }

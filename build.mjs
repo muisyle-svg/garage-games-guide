@@ -200,13 +200,13 @@ const icon = k => `<svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true"
 const stat = (k, value, label, title) => `<li class="stat" title="${esc(title)}">${icon(k)}<span class="stat-text"><span class="stat-value">${value}</span><span class="stat-label">${label}</span></span></li>`;
 
 // Points bubble plus scoring badges for the top of an event page.
-function stats(e) {
-  const out = [`<li>${pill(e, true)}</li>`];
+function stats(e, compact = false) {
+  const out = [`<li>${pill(e, !compact)}</li>`];
   if (e.points_label) out.push(stat('hit', esc(e.points_label), 'per hit', `Each button hit is worth ${e.points_label}`));
   if (e.grace_period != null) out.push(stat('grace', `${e.grace_period} s`, 'grace', `Grace period: finish within ${e.grace_period} seconds to keep every point`));
   if (e.points_per_second != null) out.push(stat('decay', `−${e.points_per_second}/s`, 'after grace', `After the grace period you lose ${e.points_per_second} ${e.points_per_second === 1 ? 'point' : 'points'} every second`));
   if (e.finish === 'auto') out.push(stat('auto', 'Auto', 'stop', 'Your time is recorded automatically. No need to press the button at the end.'));
-  return `<ul class="stats" aria-label="Scoring">${out.join('')}</ul>`;
+  return `<ul class="stats${compact ? ' compact' : ''}" aria-label="Scoring">${out.join('')}</ul>`;
 }
 
 function card(e, base) {
@@ -294,18 +294,18 @@ function eventPage(site, e, prev, next) {
 
 function rulesPage(site, siteSections, events) {
   const base = '../';
-  const num = v => (v == null ? '–' : esc(v));
-  const rows = events.map(e => `<tr><td><a href="${link(base, `events/${e.slug}/`)}">${esc(e.title)}</a></td>
-<td class="num">${e.bonus ? '5 / hit' : num(e.points)}</td><td class="num">${e.grace_period != null ? `${e.grace_period} s` : '–'}</td><td class="num">${num(e.points_per_second)}</td></tr>`).join('');
+  const items = events.map(e => `<li class="lineup-item">
+  <a class="lineup-title" href="${link(base, `events/${e.slug}/`)}">${esc(e.title)}</a>
+  ${e.objective ? `<div class="lineup-objective">${md(e.objective)}</div>` : ''}
+  ${stats(e, true)}
+</li>`).join('\n');
   const body = `
 <article class="rules">
   <h1>How it works</h1>
   ${siteSections.map(s => `<section id="${slugify(s.heading)}"><h2>${esc(s.heading)}</h2>${md(s.md)}</section>`).join('\n')}
   <section id="event-list">
     <h2>Event list</h2>
-    <div class="table-wrap"><table class="lineup"><caption class="visually-hidden">Events, points, grace periods and points lost per second</caption>
-    <thead><tr><th scope="col">Event</th><th scope="col" class="num">Points</th><th scope="col" class="num">Grace</th><th scope="col" class="num">Lost / s</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>
+    <ol class="lineup">${items}</ol>
   </section>
 </article>`;
   return layout({ site, base, title: 'How it works', body, current: 'rules' });
