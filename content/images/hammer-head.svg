@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="t">
+<title id="t">A competitor in safety glasses takes a nail from a box and hammers it flush into a plank</title>
+<style>
+.a{animation-duration:6s;animation-iteration-count:infinite;animation-timing-function:linear}
+.stride,.stride2{animation:stride .6s ease-in-out infinite alternate;transform-origin:-2px 245px}
+.stride2{animation-delay:-.6s}
+@keyframes stride{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+.label{font:700 13px system-ui,sans-serif;fill:#f3efe6}
+.reach{animation-name:reach;animation-timing-function:ease-in-out;transform-origin:2px 150px;}@keyframes reach{0%{transform:rotate(80deg)}6%{transform:rotate(80deg)}10%{transform:rotate(47.8deg)}22%{transform:rotate(30deg)}28%{transform:rotate(80deg)}100%{transform:rotate(80deg)}}.hammer{animation-name:hammer;animation-timing-function:ease-in;transform-origin:2px 150px;}@keyframes hammer{0%{transform:rotate(60deg)}30%{transform:rotate(60deg)}34%{transform:rotate(-45deg)}40%{transform:rotate(31deg)}46%{transform:rotate(-45deg)}52%{transform:rotate(35deg)}58%{transform:rotate(-45deg)}64%{transform:rotate(40deg)}70%{transform:rotate(-45deg)}76%{transform:rotate(45deg)}84%{transform:rotate(60deg)}100%{transform:rotate(60deg)}}.nail{animation-name:nail;animation-timing-function:linear;}@keyframes nail{0%{transform:translate(315px,196px)}10%{transform:translate(315px,196px)}22%{transform:translate(340px,198px)}39.5%{transform:translate(340px,198px)}40.5%{transform:translate(340px,206.5px)}51.5%{transform:translate(340px,206.5px)}52.5%{transform:translate(340px,215px)}63.5%{transform:translate(340px,215px)}64.5%{transform:translate(340px,223.5px)}75.5%{transform:translate(340px,223.5px)}76.5%{transform:translate(340px,232px)}100%{transform:translate(340px,232px)}}.nailv{animation-name:nailv;animation-timing-function:steps(1,end);}@keyframes nailv{0%{opacity:0}10%{opacity:1}95%{opacity:0}100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+<defs>
+<pattern id="hazard" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="24" height="24" fill="#1f1d19"/><rect width="12" height="24" fill="#f2b705"/></pattern>
+<clipPath id="above"><rect width="640" height="235"/></clipPath>
+</defs>
+<rect width="640" height="400" fill="#2b2925"/>
+<g fill="#34312c"><rect y="40" width="640" height="2"/><rect y="110" width="640" height="2"/><rect y="180" width="640" height="2"/><rect y="250" width="640" height="2"/></g>
+<rect y="340" width="640" height="60" fill="#3a362f"/>
+
+<rect y="336" width="640" height="8" fill="url(#hazard)"/>
+<rect x="300" y="232" width="220" height="18" rx="2" fill="#a8743f"/>
+<path d="M320 250 L306 336 M330 250 L344 336 M490 250 L476 336 M500 250 L514 336" stroke="#7a5230" stroke-width="8"/>
+<rect x="300" y="214" width="34" height="18" rx="2" fill="#4c525a"/>
+<g stroke="#9aa1ab" stroke-width="2"><path d="M306 210 v6 M312 208 v8 M318 211 v6 M325 209 v8"/></g>
+<g clip-path="url(#above)"><g class="a nailv"><g class="a nail"><rect x="-1.5" y="0" width="3" height="34" fill="#9aa1ab"/><path d="M-1.5 34 L0 39 L1.5 34 Z" fill="#9aa1ab"/><rect x="-6" y="-3" width="12" height="4" rx="1" fill="#6c737d"/></g></g></g>
+<g transform="translate(255 0)"><g stroke="#f2b705" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none">
+<path d="M0 160 L-2 245"/><path d="M-2 245 L-18 290 L-24 336"/><path d="M-2 245 L20 288 L26 336"/>
+</g>
+<circle cx="2" cy="128" r="20" fill="#f2b705"/>
+<path d="M14 120 h8" stroke="#1f1d19" stroke-width="3" stroke-linecap="round"/>
+<path d="M-17 124 h38" stroke="#1f1d19" stroke-width="4"/><rect x="8" y="116" width="17" height="11" rx="4" fill="#8fd3f0" stroke="#1f1d19" stroke-width="2"/>
+<g class="a reach"><path d="M2 150 H90" stroke="#f2b705" stroke-width="10" stroke-linecap="round" fill="none"/></g>
+<g class="a hammer"><path d="M2 150 H62" stroke="#f2b705" stroke-width="10" stroke-linecap="round" fill="none"/><path d="M62 150 H112" stroke="#7a5230" stroke-width="7" stroke-linecap="round"/><rect x="106" y="138" width="14" height="26" rx="2" fill="#6c737d"/></g></g>
+</svg>

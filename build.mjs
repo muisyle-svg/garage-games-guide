@@ -75,7 +75,6 @@ const md = s => marked.parse(s, { gfm: true });
 const mdInline = s => marked.parseInline(s, { gfm: true });
 const plain = html => html.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
   .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
-const fmtPoints = p => (typeof p === 'number' ? p.toFixed(1) : '');
 
 async function exists(p) { try { await fs.access(p); return true; } catch { return false; } }
 
@@ -99,10 +98,28 @@ async function loadEvents() {
       else console.warn(`${f}: text before the first "## " heading is ignored`);
     }
     for (const x of extra) console.warn(`${f}: extra section "${x.heading}" shown after the standard ones`);
-    events.push({ ...data, slug, file: f, sections: [...sections, ...extra], flags: data.flags || [] });
+    const scoring = sections.find(s => s.key === 'scoring');
+    if (!scoring.md) scoring.md = scoringText(data);
+    const objective = sections.find(s => s.key === 'objective').md;
+    events.push({ ...data, slug, file: f, objective, sections: [...sections, ...extra].filter(s => s.md) });
   }
   events.sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.title.localeCompare(b.title));
   return events;
+}
+
+// Scoring paragraph built from the event's numbers, so every page says it the same way.
+function scoringText(e) {
+  const lines = [];
+  if (e.scoring) lines.push(e.scoring);
+  if (e.points != null) {
+    let t = `**${e.points} points.**`;
+    if (e.grace_period != null) t += ` Finish within the ${e.grace_period}-second grace period to keep them all.`;
+    if (e.points_per_second != null) t += ` After that, you lose ${e.points_per_second} ${e.points_per_second === 1 ? 'point' : 'points'} every second.`;
+    lines.push(t);
+  }
+  if (e.finish === 'button') lines.push('Press the button again to stop the clock.');
+  if (e.finish === 'auto') lines.push('Your time is recorded automatically. There is no button to press at the end.');
+  return lines.join('\n\n');
 }
 
 // ---------- images ----------
@@ -166,11 +183,10 @@ function layout({ site, base, title, description, body, current }) {
 <header class="topbar">
   <a class="brand" href="${link(base, '')}"><span class="brand-mark" aria-hidden="true"></span>${esc(site.title)}</a>
   <nav aria-label="Main"><ul>
-    <li><a href="${link(base, '')}"${current === 'home' ? ' aria-current="page"' : ''}>Events</a></li>
     <li><a href="${link(base, 'rules/')}"${current === 'rules' ? ' aria-current="page"' : ''}>How it works</a></li>
+    <li><a href="${link(base, '')}#events"${current === 'home' ? ' aria-current="page"' : ''}>Events</a></li>
   </ul></nav>
 </header>
-${site.wording !== 'verbatim' || site.anyDraft ? `<p class="draft-banner" role="note">Prototype: the wording here is a close paraphrase of the slides, waiting on the exact text.</p>` : ''}
 <main id="main" tabindex="-1">
 ${body}
 </main>
@@ -183,13 +199,11 @@ ${body}
 `;
 }
 
-function flagsBox(flags, site) {
-  if (!site.show_flags || !flags?.length) return '';
-  return `<aside class="flags" aria-labelledby="flags-h">
-<h2 id="flags-h">Needs clarification</h2>
-<p class="flags-note">These points are missing or unclear in the original guide. Nothing has been invented to fill them.</p>
-<ul>${flags.map(f => `<li>${mdInline(f)}</li>`).join('')}</ul>
-</aside>`;
+function pill(e, big = false) {
+  const cls = `points${big ? ' big' : ''}`;
+  if (e.bonus) return `<span class="${cls} bonus">Bonus</span>`;
+  if (e.points == null) return '';
+  return `<span class="${cls}"><span class="visually-hidden">Worth </span>${e.points}<span class="unit"> pts</span></span>`;
 }
 
 function card(e, base) {
@@ -198,7 +212,7 @@ function card(e, base) {
     <img src="${base}${e.imageUrl}" alt="" width="640" height="400" loading="lazy" decoding="async">
     <span class="card-body">
       <span class="card-title">${esc(e.title)}</span>
-      <span class="points"><span class="visually-hidden">Worth </span>${fmtPoints(e.points)}<span class="unit"> pts</span></span>
+      ${pill(e)}
     </span>
   </a>
 </li>`;
@@ -207,24 +221,30 @@ function card(e, base) {
 function homePage(site, events) {
   const base = './';
   const facts = (site.facts || []).map(f => `<li>${esc(f)}</li>`).join('');
+  const steps = (site.steps || []).map(st => `<li><span>${mdInline(st)}</span></li>`).join("");
   const body = `
 <section class="hero">
   <h1>${esc(site.title)}</h1>
   <p class="tagline">${esc(site.tagline)}</p>
   ${facts ? `<ul class="facts">${facts}</ul>` : ''}
-  <p><a class="button" href="${link(base, 'rules/')}">How it works</a></p>
+</section>
+
+<section class="howto" aria-labelledby="howto-h">
+  <h2 id="howto-h">How it works</h2>
+  <ol class="steps">${steps}</ol>
+  <p><a class="button" href="${link(base, 'rules/')}">Read the full rules</a></p>
 </section>
 
 <section class="search" role="search" aria-label="Search events and rules">
   <label for="q">Search events and rules</label>
   <div class="search-field">
-    <input id="q" type="search" placeholder="Try “darts”, “green hole”, “No Rep”" autocomplete="off" spellcheck="false">
+    <input id="q" type="search" placeholder="Try “keypad”, “grace period”, “No Rep”" autocomplete="off" spellcheck="false">
   </div>
   <p id="search-status" class="search-status" aria-live="polite"></p>
   <ol id="search-results" class="search-results" hidden></ol>
 </section>
 
-<section aria-labelledby="events-h">
+<section id="events" aria-labelledby="events-h">
   <h2 id="events-h" class="section-title">Events</h2>
   <ul class="cards" id="cards">
     ${events.map(e => card(e, base)).join('\n')}
@@ -237,14 +257,7 @@ function eventPage(site, e, prev, next) {
   const base = '../../';
   const sections = e.sections.map(s => {
     const id = s.key;
-    let inner;
-    if (s.key === 'scoring') {
-      inner = `${e.points != null ? `<p class="points-line"><strong>${fmtPoints(e.points)} points</strong> for completing this event.</p>` : ''}
-${s.md ? md(s.md) : ''}`;
-      if (!s.md && e.points == null) inner = `<p class="missing">Not stated in the original guide.</p>`;
-    } else {
-      inner = s.md ? md(s.md) : `<p class="missing">Not stated in the original guide.</p>`;
-    }
+    const inner = md(s.md);
     return `<details class="rule-section" id="${id}"${s.open ? ' open' : ''}>
 <summary><h2>${esc(s.heading)}</h2></summary>
 <div class="rule-body">${inner}</div>
@@ -255,46 +268,44 @@ ${s.md ? md(s.md) : ''}`;
 <article class="event">
   <nav class="crumbs" aria-label="Breadcrumb"><a href="${link(base, '')}">All events</a></nav>
   <header class="event-head">
-    <h1>${esc(e.title)}</h1>
-    ${e.points != null ? `<p class="points big">${fmtPoints(e.points)}<span class="unit"> pts</span></p>` : ''}
+    <div>
+      ${e.subtitle ? `<p class="eyebrow">${esc(e.subtitle)}</p>` : ''}
+      <h1>${esc(e.title)}</h1>
+    </div>
+    ${pill(e, true)}
   </header>
   <figure class="event-figure">
-    <img src="${base}${e.imageUrl}" alt="${esc(e.imageIsPlaceholder ? '' : e.image_alt || '')}" width="640" height="400" decoding="async">
+    <img src="${base}${e.imageUrl}" alt="${esc(e.imageIsPlaceholder ? '' : e.image_alt || `Animation: ${plain(md(e.objective || e.title))}`)}" width="640" height="400" decoding="async">
     ${e.caption ? `<figcaption>${mdInline(e.caption)}</figcaption>` : ''}
   </figure>
   <div class="section-tools">
     <button type="button" class="link-button" data-toggle-all>Expand all</button>
   </div>
   ${sections}
-  ${flagsBox(e.flags, site)}
   <nav class="pager" aria-label="More events">
     ${prev ? `<a rel="prev" href="${link(base, `events/${prev.slug}/`)}"><span>Previous</span>${esc(prev.title)}</a>` : '<span></span>'}
     ${next ? `<a rel="next" href="${link(base, `events/${next.slug}/`)}"><span>Next</span>${esc(next.title)}</a>` : '<span></span>'}
   </nav>
 </article>`;
-  const desc = plain(md(e.sections.find(s => s.key === 'objective')?.md || '')).slice(0, 155);
+  const desc = plain(md(e.objective || '')).slice(0, 155);
   return layout({ site, base, title: e.title, description: desc, body, current: 'event' });
 }
 
-function rulesPage(site, siteSections, lineup, events) {
+function rulesPage(site, siteSections, events) {
   const base = '../';
-  const bySlug = new Map(events.map(e => [e.slug, e]));
-  const rows = lineup.map(l => {
-    const e = bySlug.get(slugify(l.title));
-    const name = e ? `<a href="${link(base, `events/${e.slug}/`)}">${esc(l.title)}</a>` : esc(l.title);
-    return `<tr><td>${name}</td><td class="num">${fmtPoints(l.points)}</td></tr>`;
-  }).join('');
+  const num = v => (v == null ? '–' : esc(v));
+  const rows = events.map(e => `<tr><td><a href="${link(base, `events/${e.slug}/`)}">${esc(e.title)}</a></td>
+<td class="num">${e.bonus ? '5 / hit' : num(e.points)}</td><td class="num">${e.grace_period != null ? `${e.grace_period} s` : '–'}</td><td class="num">${num(e.points_per_second)}</td></tr>`).join('');
   const body = `
 <article class="rules">
   <h1>How it works</h1>
   ${siteSections.map(s => `<section id="${slugify(s.heading)}"><h2>${esc(s.heading)}</h2>${md(s.md)}</section>`).join('\n')}
   <section id="event-list">
     <h2>Event list</h2>
-    <table class="lineup"><caption class="visually-hidden">Events and their point values</caption>
-    <thead><tr><th scope="col">Event</th><th scope="col" class="num">Points</th></tr></thead>
-    <tbody>${rows}</tbody></table>
+    <div class="table-wrap"><table class="lineup"><caption class="visually-hidden">Events, points, grace periods and points lost per second</caption>
+    <thead><tr><th scope="col">Event</th><th scope="col" class="num">Points</th><th scope="col" class="num">Grace</th><th scope="col" class="num">Lost / s</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
   </section>
-  ${flagsBox(site.flags, site)}
 </article>`;
   return layout({ site, base, title: 'How it works', body, current: 'rules' });
 }
@@ -353,12 +364,6 @@ async function main() {
   const { data: site, body: siteBody } = parseFrontMatter(await fs.readFile(path.join(CONTENT, 'site.md'), 'utf8'), 'site.md');
   const siteSections = splitSections(siteBody).filter(s => s.heading);
   const events = await loadEvents();
-  site.anyDraft = events.some(e => e.wording !== 'verbatim');
-
-  const lineupFile = path.join(CONTENT, 'lineup.json');
-  const lineup = await exists(lineupFile)
-    ? JSON.parse(await fs.readFile(lineupFile, 'utf8')).events
-    : events.map(e => ({ title: e.title, points: e.points }));
 
   const css = await fs.readFile(path.join(SRC, 'style.css'), 'utf8');
   const js = await fs.readFile(path.join(SRC, 'app.js'), 'utf8');
@@ -377,7 +382,7 @@ async function main() {
   await writeFile('search-index.json', JSON.stringify(searchIndex(site, siteSections, events)));
 
   await writeFile('index.html', homePage(site, events));
-  await writeFile('rules/index.html', rulesPage(site, siteSections, lineup, events));
+  await writeFile('rules/index.html', rulesPage(site, siteSections, events));
   await writeFile('404.html', notFoundPage(site));
   for (const [i, e] of events.entries()) {
     await writeFile(`events/${e.slug}/index.html`, eventPage(site, e, events[i - 1], events[i + 1]));

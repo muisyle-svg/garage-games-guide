@@ -1,27 +1,26 @@
 ---
-title: Bocce the Moon
-order: 10
-points: 64.6
-image: bocce-the-moon.jpg
-image_alt: Two steel poles forming a ramp with a ball rolling uphill toward scoring holes
-caption: Something seems wrong here.
-wording: paraphrase
-flags:
-  - '"Green *" has an asterisk with no matching footnote. What does it point to?'
-  - 'The slide says landing in the green hole is needed "to win", but general rules award points per completed event. Confirm this means "to complete the event".'
-  - Where the ball starts, and what happens if it drops into a non-green hole or falls through, is not stated.
+title: 'Bocce the Moon'
+order: 11
+points: 100
+grace_period: 8
+points_per_second: 1
+finish: button
+image: bocce-the-moon.svg
 ---
 
 ## Objective
 
-Land the ball in the Green * hole.
+Drop the ball in the highest scoring zone.
+
+## Setup
+
+Ball inside the return.
 
 ## Gameplay
 
-1. Use the two steel poles. Open them so the ball rolls uphill.
-2. Close them before the ball falls through.
-3. Open them again to drop the ball into the scoring holes.
+Take the ball out from the return and place it on the rails. Roll the ball upwards by opening and closing the rails. You must land the ball in the green zone to complete the event.
 
-## Scoring
+## Additional rules
 
-You must land in the Green * hole to win.
+- The ball must start each attempt touching the block at the bottom of the rails.
+- You may roll the ball down the rails or place the ball directly at the bottom.

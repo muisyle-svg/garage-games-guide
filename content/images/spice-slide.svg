@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="t">
+<title id="t">A competitor slides a spice shaker down a long bar so it stops in the blue-tape scoring zone</title>
+<style>
+.a{animation-duration:5s;animation-iteration-count:infinite;animation-timing-function:linear}
+.stride,.stride2{animation:stride .6s ease-in-out infinite alternate;transform-origin:-2px 245px}
+.stride2{animation-delay:-.6s}
+@keyframes stride{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+.label{font:700 13px system-ui,sans-serif;fill:#f3efe6}
+.slide{animation-name:slide;animation-timing-function:cubic-bezier(.2,.75,.35,1);}@keyframes slide{0%{transform:translate(0px,0px)}15%{transform:translate(0px,0px)}55%{transform:translate(424px,0px)}100%{transform:translate(424px,0px)}}.slidev{animation-name:slidev;animation-timing-function:steps(1,end);}@keyframes slidev{0%{opacity:0}0%{opacity:1}92%{opacity:0}100%{opacity:0}}.arm{animation-name:arm;animation-timing-function:ease-in-out;transform-origin:2px 150px;}@keyframes arm{0%{transform:rotate(62deg)}10%{transform:rotate(62deg)}15%{transform:rotate(30deg)}25%{transform:rotate(62deg)}100%{transform:rotate(62deg)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+<defs>
+<pattern id="hazard" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="24" height="24" fill="#1f1d19"/><rect width="12" height="24" fill="#f2b705"/></pattern>
+
+</defs>
+<rect width="640" height="400" fill="#2b2925"/>
+<g fill="#34312c"><rect y="40" width="640" height="2"/><rect y="110" width="640" height="2"/><rect y="180" width="640" height="2"/><rect y="250" width="640" height="2"/></g>
+<rect y="340" width="640" height="60" fill="#3a362f"/>
+
+<rect y="336" width="640" height="8" fill="url(#hazard)"/>
+<g transform="translate(46 0)"><g stroke="#f2b705" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none">
+<path d="M0 160 L-2 245"/><path d="M-2 245 L-18 290 L-24 336"/><path d="M-2 245 L20 288 L26 336"/><path d="M0 168 L-18 200 L-30 228"/>
+</g>
+<circle cx="2" cy="128" r="20" fill="#f2b705"/>
+<path d="M14 120 h8" stroke="#1f1d19" stroke-width="3" stroke-linecap="round"/>
+<g class="a arm"><path d="M2 150 H74" stroke="#f2b705" stroke-width="10" stroke-linecap="round" fill="none"/></g></g>
+<rect x="30" y="230" width="590" height="14" rx="3" fill="#a8743f"/><rect x="40" y="244" width="570" height="92" fill="#7a5230"/>
+<rect x="490" y="229" width="56" height="5" fill="#2f6fb5"/><rect x="490" y="244" width="56" height="6" fill="#2f6fb5"/>
+<rect x="141" y="196" width="18" height="30" rx="5" fill="#f3e7c9" stroke="#1f1d19" stroke-width="1.5"/><rect x="142" y="188" width="16" height="10" rx="4" fill="#9aa1ab"/><rect x="140" y="225" width="20" height="5" rx="2" fill="#1f1d19" opacity=".5"/>
+<g class="a slidev"><g class="a slide"><rect x="85" y="196" width="18" height="30" rx="5" fill="#f3efe6" stroke="#1f1d19" stroke-width="1.5"/><rect x="86" y="188" width="16" height="10" rx="4" fill="#c0392b"/><rect x="84" y="225" width="20" height="5" rx="2" fill="#1f1d19" opacity=".5"/></g></g>
+</svg>

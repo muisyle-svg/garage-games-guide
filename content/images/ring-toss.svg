@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="t">
+<title id="t">A competitor throws a cornhole bag underhand up through a hanging gymnastics ring and onto a cornhole board</title>
+<style>
+.a{animation-duration:4s;animation-iteration-count:infinite;animation-timing-function:linear}
+.stride,.stride2{animation:stride .6s ease-in-out infinite alternate;transform-origin:-2px 245px}
+.stride2{animation-delay:-.6s}
+@keyframes stride{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+.label{font:700 13px system-ui,sans-serif;fill:#f3efe6}
+.swing{animation-name:swing;animation-timing-function:ease-in-out;transform-origin:330px 0px;}@keyframes swing{0%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}100%{transform:rotate(-5deg)}}.arm{animation-name:arm;animation-timing-function:ease-in-out;transform-origin:2px 150px;}@keyframes arm{0%{transform:rotate(85deg)}50%{transform:rotate(85deg)}60%{transform:rotate(145deg)}65%{transform:rotate(15deg)}72%{transform:rotate(5deg)}85%{transform:rotate(85deg)}100%{transform:rotate(85deg)}}.held{animation-name:held;animation-timing-function:steps(1,end);}@keyframes held{0%{opacity:0}0%{opacity:1}65%{opacity:0}100%{opacity:0}}.bag{animation-name:bag;animation-timing-function:linear;}@keyframes bag{0%{transform:translate(158px,168px)}65%{transform:translate(158px,168px) rotate(0deg)}68.3%{transform:translate(215px,146px) rotate(50deg)}71.6%{transform:translate(275px,150px) rotate(100deg)}75%{transform:translate(330px,170px) rotate(150deg)}78.3%{transform:translate(395px,205px) rotate(200deg)}81.6%{transform:translate(455px,255px) rotate(250deg)}85%{transform:translate(505px,294px) rotate(300deg)}88%{transform:translate(515px,295px) rotate(350deg)}100%{transform:translate(515px,295px) rotate(350deg)}}.bagv{animation-name:bagv;animation-timing-function:steps(1,end);}@keyframes bagv{0%{opacity:0}65%{opacity:1}97%{opacity:0}100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+<defs>
+<pattern id="hazard" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="24" height="24" fill="#1f1d19"/><rect width="12" height="24" fill="#f2b705"/></pattern>
+
+</defs>
+<rect width="640" height="400" fill="#2b2925"/>
+<g fill="#34312c"><rect y="40" width="640" height="2"/><rect y="110" width="640" height="2"/><rect y="180" width="640" height="2"/><rect y="250" width="640" height="2"/></g>
+<rect y="340" width="640" height="60" fill="#3a362f"/>
+
+<rect y="336" width="640" height="8" fill="url(#hazard)"/>
+<rect x="196" y="346" width="5" height="50" fill="#f3efe6" opacity=".85"/>
+<path d="M420 336 L600 336 L600 282 L420 322 Z" fill="#7a5230"/>
+<path d="M420 322 L600 282 L600 288 L420 328 Z" fill="#a8743f"/>
+<ellipse cx="560" cy="292" rx="13" ry="4" fill="#1f1d19"/>
+<g class="a bagv"><g class="a bag"><rect x="-12" y="-8" width="24" height="16" rx="5" fill="#c0392b"/><path d="M-8 0 h16" stroke="#fff" stroke-width="1.5" opacity=".4"/></g></g>
+<g class="a swing"><path d="M330 0 V144" stroke="#f3e7c9" stroke-width="3"/><circle cx="330" cy="170" r="26" fill="none" stroke="#c8a165" stroke-width="8"/></g>
+<g transform="translate(110 0)"><g stroke="#f2b705" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none">
+<path d="M0 160 L-2 245"/><path d="M-2 245 L-18 290 L-24 336"/><path d="M-2 245 L20 288 L26 336"/><path d="M0 168 L-18 200 L-30 228"/>
+</g>
+<circle cx="2" cy="128" r="20" fill="#f2b705"/>
+<path d="M14 120 h8" stroke="#1f1d19" stroke-width="3" stroke-linecap="round"/>
+<g class="a arm"><path d="M2 150 H52" stroke="#f2b705" stroke-width="10" stroke-linecap="round" fill="none"/><g class="a held"><rect x="46" y="142" width="20" height="14" rx="4" fill="#c0392b"/></g></g></g>
+</svg>

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="t">
+<title id="t">Seen from behind, a competitor tosses ping pong balls up into cups on the top shelf behind the bar</title>
+<style>
+.a{animation-duration:6s;animation-iteration-count:infinite;animation-timing-function:linear}
+.stride,.stride2{animation:stride .6s ease-in-out infinite alternate;transform-origin:-2px 245px}
+.stride2{animation-delay:-.6s}
+@keyframes stride{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+.label{font:700 13px system-ui,sans-serif;fill:#f3efe6}
+.arm{animation-name:arm;animation-timing-function:ease-in-out;transform-origin:2px 150px;}@keyframes arm{0%{transform:rotate(80deg)}6%{transform:rotate(80deg)}11%{transform:rotate(-60deg)}14%{transform:rotate(-85deg)}26%{transform:rotate(80deg)}56%{transform:rotate(80deg)}61%{transform:rotate(-60deg)}64%{transform:rotate(-85deg)}76%{transform:rotate(80deg)}100%{transform:rotate(80deg)}}.held{animation-name:held;animation-timing-function:steps(1,end);}@keyframes held{0%{opacity:0}0%{opacity:1}14%{opacity:0}40%{opacity:1}64%{opacity:0}100%{opacity:0}}.b1{animation-name:b1;animation-timing-function:linear;}@keyframes b1{0%{transform:translate(326px,140px)}14%{transform:translate(326px,140px)}17%{transform:translate(330px,82px)}20%{transform:translate(334px,74px)}23%{transform:translate(338px,94px)}26%{transform:translate(362px,78px)}31%{transform:translate(410px,150px)}36%{transform:translate(440px,260px)}100%{transform:translate(440px,260px)}}.b1v{animation-name:b1v;animation-timing-function:steps(1,end);}@keyframes b1v{0%{opacity:0}14%{opacity:1}36%{opacity:0}100%{opacity:0}}.b2{animation-name:b2;animation-timing-function:linear;}@keyframes b2{0%{transform:translate(326px,140px)}64%{transform:translate(326px,140px)}67%{transform:translate(346px,72px)}70%{transform:translate(364px,62px)}73%{transform:translate(375px,88px)}75%{transform:translate(375px,108px)}100%{transform:translate(375px,108px)}}.b2v{animation-name:b2v;animation-timing-function:steps(1,end);}@keyframes b2v{0%{opacity:0}64%{opacity:1}76%{opacity:0}100%{opacity:0}}.jiggle{animation-name:jiggle;animation-timing-function:linear;transform-origin:375px 120px;}@keyframes jiggle{0%{transform:rotate(0deg)}74%{transform:rotate(0deg)}76%{transform:rotate(6deg)}78%{transform:rotate(-5deg)}80%{transform:rotate(3deg)}82%{transform:rotate(0deg)}100%{transform:rotate(0deg)}}.star{animation-name:star;animation-timing-function:steps(1,end);}@keyframes star{0%{opacity:0}76%{opacity:1}92%{opacity:0}100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+<defs>
+<pattern id="hazard" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="24" height="24" fill="#1f1d19"/><rect width="12" height="24" fill="#f2b705"/></pattern>
+
+</defs>
+<rect width="640" height="400" fill="#2b2925"/>
+<g fill="#34312c"><rect y="40" width="640" height="2"/><rect y="110" width="640" height="2"/><rect y="180" width="640" height="2"/><rect y="250" width="640" height="2"/></g>
+<rect y="340" width="640" height="60" fill="#3a362f"/>
+
+<rect y="336" width="640" height="8" fill="url(#hazard)"/>
+<rect x="170" y="120" width="300" height="9" rx="2" fill="#a8743f"/><rect x="180" y="129" width="8" height="20" fill="#7a5230"/><rect x="452" y="129" width="8" height="20" fill="#7a5230"/>
+<g class="a b1v"><g class="a b1"><circle r="6" fill="#f3efe6" stroke="#1f1d19" stroke-width="1"/></g></g><g class="a b2v"><g class="a b2"><circle r="6" fill="#f3efe6" stroke="#1f1d19" stroke-width="1"/></g></g>
+<path d="M196 94 H224 L220 120 H200 Z" fill="#c0392b" stroke="#1f1d19" stroke-width="1.5"/><rect x="195" y="92" width="30" height="5" rx="2" fill="#f3efe6"/><path d="M251 94 H279 L275 120 H255 Z" fill="#c0392b" stroke="#1f1d19" stroke-width="1.5"/><rect x="250" y="92" width="30" height="5" rx="2" fill="#f3efe6"/><path d="M306 94 H334 L330 120 H310 Z" fill="#c0392b" stroke="#1f1d19" stroke-width="1.5"/><rect x="305" y="92" width="30" height="5" rx="2" fill="#f3efe6"/><path d="M416 94 H444 L440 120 H420 Z" fill="#c0392b" stroke="#1f1d19" stroke-width="1.5"/><rect x="415" y="92" width="30" height="5" rx="2" fill="#f3efe6"/><g class="a jiggle"><path d="M361 94 H389 L385 120 H365 Z" fill="#c0392b" stroke="#1f1d19" stroke-width="1.5"/><rect x="360" y="92" width="30" height="5" rx="2" fill="#f3efe6"/></g>
+<g class="a star"><path d="M375 70 l4 10 10 1 -8 6 3 10 -9 -6 -9 6 3 -10 -8 -6 10 -1z" fill="#f2b705"/></g>
+<rect x="40" y="244" width="560" height="10" rx="3" fill="#a8743f"/><rect x="50" y="254" width="540" height="84" fill="#7a5230"/>
+<g transform="translate(320 40)"><g stroke="#f2b705" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none">
+<path d="M0 160 L-2 245"/><path d="M-2 245 L-18 290 L-24 336"/><path d="M-2 245 L20 288 L26 336"/><path d="M0 168 L-18 200 L-30 228"/>
+</g>
+<circle cx="2" cy="128" r="20" fill="#f2b705"/>
+<path d="M-17 124 a20 20 0 0 1 38 0 a22 14 0 0 0 -38 0" fill="#7a5230"/>
+<g class="a arm"><path d="M2 150 H52" stroke="#f2b705" stroke-width="10" stroke-linecap="round" fill="none"/><g class="a held"><circle cx="54" cy="150" r="6" fill="#f3efe6"/></g></g></g>
+</svg>

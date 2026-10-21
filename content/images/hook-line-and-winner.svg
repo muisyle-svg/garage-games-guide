@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="t">
+<title id="t">A competitor lets go of a ring on a string and it swings across to catch on a hook on the wall</title>
+<style>
+.a{animation-duration:5s;animation-iteration-count:infinite;animation-timing-function:linear}
+.stride,.stride2{animation:stride .6s ease-in-out infinite alternate;transform-origin:-2px 245px}
+.stride2{animation-delay:-.6s}
+@keyframes stride{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+.label{font:700 13px system-ui,sans-serif;fill:#f3efe6}
+.ring{animation-name:ring;animation-timing-function:ease-in-out;transform-origin:400px 20px;}@keyframes ring{0%{transform:rotate(55deg)}20%{transform:rotate(55deg)}46%{transform:rotate(-60.8deg)}85%{transform:rotate(-60.8deg)}100%{transform:rotate(55deg)}}.arm{animation-name:arm;animation-timing-function:ease-in-out;transform-origin:2px 150px;}@keyframes arm{0%{transform:rotate(-27deg)}20%{transform:rotate(-27deg)}26%{transform:rotate(70deg)}86%{transform:rotate(70deg)}100%{transform:rotate(-27deg)}}.flash{animation-name:flash;animation-timing-function:steps(1,end);}@keyframes flash{0%{opacity:0}47%{opacity:1}60%{opacity:0}100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+<defs>
+<pattern id="hazard" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="24" height="24" fill="#1f1d19"/><rect width="12" height="24" fill="#f2b705"/></pattern>
+
+</defs>
+<rect width="640" height="400" fill="#2b2925"/>
+<g fill="#34312c"><rect y="40" width="640" height="2"/><rect y="110" width="640" height="2"/><rect y="180" width="640" height="2"/><rect y="250" width="640" height="2"/></g>
+<rect y="340" width="640" height="60" fill="#3a362f"/>
+
+<rect y="336" width="640" height="8" fill="url(#hazard)"/>
+<rect x="226" y="346" width="5" height="50" fill="#f3efe6" opacity=".85"/>
+<rect x="380" y="10" width="40" height="10" rx="3" fill="#6c737d"/>
+<rect x="546" y="70" width="28" height="70" rx="4" fill="#a8743f"/>
+<path d="M558 96 v14 q0 8 7 8 q6 0 6 -6" fill="none" stroke="#9aa1ab" stroke-width="4" stroke-linecap="round"/>
+<g class="a flash"><circle cx="565" cy="114" r="24" fill="none" stroke="#f2b705" stroke-width="3" stroke-dasharray="4 6"/></g>
+<g class="a ring"><path d="M400 20 V197" stroke="#f3e7c9" stroke-width="2.5"/><circle cx="400" cy="209" r="12" fill="none" stroke="#9aa1ab" stroke-width="4"/></g>
+<g transform="translate(200 0)"><g stroke="#f2b705" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none">
+<path d="M0 160 L-2 245"/><path d="M-2 245 L-18 290 L-24 336"/><path d="M-2 245 L20 288 L26 336"/><path d="M0 168 L-18 200 L-30 228"/>
+</g>
+<circle cx="2" cy="128" r="20" fill="#f2b705"/>
+<path d="M14 120 h8" stroke="#1f1d19" stroke-width="3" stroke-linecap="round"/>
+<g class="a arm"><path d="M2 150 H50" stroke="#f2b705" stroke-width="10" stroke-linecap="round" fill="none"/></g></g>
+</svg>

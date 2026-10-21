@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="t">
+<title id="t">A competitor spreads and closes two long steel rails to roll a ball uphill, then drops it into the green hole</title>
+<style>
+.a{animation-duration:7s;animation-iteration-count:infinite;animation-timing-function:linear}
+.stride,.stride2{animation:stride .6s ease-in-out infinite alternate;transform-origin:-2px 245px}
+.stride2{animation-delay:-.6s}
+@keyframes stride{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+.label{font:700 13px system-ui,sans-serif;fill:#f3efe6}
+.lrail{animation-name:lrail;animation-timing-function:ease-in-out;transform-origin:306px 40px;}@keyframes lrail{0%{transform:rotate(0deg)}8%{transform:rotate(0deg)}14%{transform:rotate(3deg)}18%{transform:rotate(0deg)}24%{transform:rotate(0deg)}30%{transform:rotate(3deg)}34%{transform:rotate(0deg)}40%{transform:rotate(0deg)}46%{transform:rotate(3deg)}50%{transform:rotate(0deg)}56%{transform:rotate(0deg)}60%{transform:rotate(2.4deg)}64%{transform:rotate(0deg)}68%{transform:rotate(0deg)}72%{transform:rotate(7deg)}88%{transform:rotate(7deg)}94%{transform:rotate(0deg)}100%{transform:rotate(0deg)}}.rrail{animation-name:rrail;animation-timing-function:ease-in-out;transform-origin:334px 40px;}@keyframes rrail{0%{transform:rotate(0deg)}8%{transform:rotate(0deg)}14%{transform:rotate(-3deg)}18%{transform:rotate(0deg)}24%{transform:rotate(0deg)}30%{transform:rotate(-3deg)}34%{transform:rotate(0deg)}40%{transform:rotate(0deg)}46%{transform:rotate(-3deg)}50%{transform:rotate(0deg)}56%{transform:rotate(0deg)}60%{transform:rotate(-2.4deg)}64%{transform:rotate(0deg)}68%{transform:rotate(0deg)}72%{transform:rotate(-7deg)}88%{transform:rotate(-7deg)}94%{transform:rotate(0deg)}100%{transform:rotate(0deg)}}.ball{animation-name:ball;animation-timing-function:ease-in-out;}@keyframes ball{0%{transform:translate(0px,312px)}8%{transform:translate(0px,312px)}14%{transform:translate(0px,262px)}24%{transform:translate(0px,262px)}30%{transform:translate(0px,196px)}40%{transform:translate(0px,196px)}46%{transform:translate(0px,130px)}56%{transform:translate(0px,130px)}60%{transform:translate(0px,80px)}72%{transform:translate(0px,80px)}74%{transform:translate(0px,80px)}100%{transform:translate(0px,80px)}}.drop{animation-name:drop;animation-timing-function:ease-in;}@keyframes drop{0%{transform:scale(1)}72%{transform:scale(1)}76%{transform:scale(.2)}100%{transform:scale(.2)}}.drop{transform-box:fill-box;transform-origin:center}.ballv{animation-name:ballv;animation-timing-function:steps(1,end);}@keyframes ballv{0%{opacity:0}0%{opacity:1}76%{opacity:0}100%{opacity:0}}.glow{animation-name:glow;animation-timing-function:steps(1,end);}@keyframes glow{0%{opacity:0}76%{opacity:1}92%{opacity:0}100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+<defs>
+<pattern id="hazard" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="24" height="24" fill="#1f1d19"/><rect width="12" height="24" fill="#f2b705"/></pattern>
+
+</defs>
+<rect width="640" height="400" fill="#2b2925"/>
+<g fill="#34312c"><rect y="40" width="640" height="2"/><rect y="110" width="640" height="2"/><rect y="180" width="640" height="2"/><rect y="250" width="640" height="2"/></g>
+<rect y="340" width="640" height="60" fill="#3a362f"/>
+
+<rect y="336" width="640" height="8" fill="url(#hazard)"/>
+<rect x="224" y="30" width="192" height="300" rx="8" fill="#a8743f" stroke="#7a5230" stroke-width="4"/>
+<circle cx="320" cy="80" r="16" fill="#2e9d5f"/><circle cx="320" cy="80" r="10" fill="#1f1d19"/><circle cx="320" cy="150" r="16" fill="#2f6fb5"/><circle cx="320" cy="150" r="10" fill="#1f1d19"/><circle cx="320" cy="215" r="16" fill="#c0392b"/><circle cx="320" cy="215" r="10" fill="#1f1d19"/><circle cx="320" cy="272" r="16" fill="#f3e7c9"/><circle cx="320" cy="272" r="10" fill="#1f1d19"/>
+<g class="a glow"><circle cx="320" cy="80" r="26" fill="none" stroke="#2e9d5f" stroke-width="5"/></g>
+<g class="a ballv"><g class="a ball"><circle class="a drop" cx="320" cy="0" r="10" fill="#9aa1ab" stroke="#1f1d19" stroke-width="1.5"/></g></g>
+<g class="a lrail"><path d="M306 40 L294 330" stroke="#6c737d" stroke-width="7" stroke-linecap="round"/><path d="M294 330 L262 410" stroke="#f2b705" stroke-width="11" stroke-linecap="round"/><circle cx="294" cy="330" r="8" fill="#f2b705"/></g>
+<g class="a rrail"><path d="M334 40 L346 330" stroke="#6c737d" stroke-width="7" stroke-linecap="round"/><path d="M346 330 L378 410" stroke="#f2b705" stroke-width="11" stroke-linecap="round"/><circle cx="346" cy="330" r="8" fill="#f2b705"/></g>
+<rect x="296" y="30" width="48" height="12" rx="4" fill="#4c525a"/>
+</svg>

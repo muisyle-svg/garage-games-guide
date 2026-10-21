@@ -1,29 +1,24 @@
 ---
-title: Garage Games 2025
+title: Garage Games 2026
 tagline: Event Rules. More Like Guidelines Really.
-description: Rules and how-to for every Garage Games 2025 event. Works on your phone and offline.
-wording: paraphrase
-show_flags: true
+description: Rules and how-to for every Garage Games 2026 event. Works on your phone and offline.
 facts:
-  - 13 stations
+  - 13 events + a bonus round
   - 5 minutes
   - Most points wins
-flags:
-  - The overview mentions bonus points per second for finishing all events under 5:00, but also says there are no bonuses this year. Which applies?
-  - The general rules say all 13 events must be completed with no skipping, but the event list says you can abandon an event and come back to it. Can a run end with events unfinished?
-  - It is not stated what happens when the 5:00 clock runs out mid-event.
-  - Points have decimals (e.g. 41.8, 75.0). How they were derived is not stated; fine to leave unexplained, but confirm they are final.
+steps:
+  - '**Press the station button to start.** Its light blinks red while the clock runs.'
+  - '**Complete the objective.** Each event page shows the setup, the gameplay and the fine print.'
+  - '**Press the button again to stop.** The light turns green. Wall-D and Chaos Heist record your time automatically.'
+  - '**Beat the grace period.** Finish inside it to keep every point; after that the event loses points each second.'
+  - '**Clear all 13 with time left?** The Sonic Dash bonus round starts on its own.'
 ---
 
-## Overview
+## The run
 
-Welcome to the Garage Games. You will compete in a sequence of events split into 13 stations.
+You have 5 minutes to complete as many of the 13 events as you can. The most points wins.
 
-Complete as many events as possible in 5 minutes. Each completed event earns points; point values vary by event.
-
-Finishing all events in under 5:00 earns bonus points for every second under time. There are no bonuses this year.
-
-The most points wins.
+Events can be done in any order. You may leave an event and come back to it later.
 
 ## Buttons
 
@@ -32,18 +27,19 @@ Each station has a button.
 1. Press the button to start the event. The red light blinks.
 2. Press the button again when you finish. The light turns green.
 
-Only press buttons during your own run.
+Only press buttons during your own run. Wall-D and Chaos Heist finish automatically, so there is nothing to press at the end.
+
+## Scoring
+
+Every event has a point value and a grace period. Finish within the grace period and you keep the full points. After the grace period, the event loses points every second until you stop the clock. Each event page lists its points, grace period and points lost per second.
+
+## Bonus round
+
+If you complete all the events with time remaining on the clock, the Sonic Dash bonus round starts automatically. Press each lit button before time runs out. Button hits are worth 5 points each.
 
 ## General rules
 
-- Do not touch the buttons.
 - Stay out of the active competitor's way.
-- All 13 events must be completed. No skipping.
 - Assistants may advise on strategy but may not touch or influence an event.
-- There are no time or point penalties.
 - Failing a guideline, such as leaving a designated boundary, earns a **No Rep**: redo the failed part.
 - The head judge has final discretion.
-
-## Event order
-
-Events can be done in any order. You may abandon an event and come back to it later.
