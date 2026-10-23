@@ -24,3 +24,4 @@ Take the ball out from the return and place it on the rails. Roll the ball upwar
 
 - The ball must start each attempt touching the block at the bottom of the rails.
 - You may roll the ball down the rails or place the ball directly at the bottom.
+- The ball may hit the deck and continue rolling into the hole. This counts as whatever hole it enters.
