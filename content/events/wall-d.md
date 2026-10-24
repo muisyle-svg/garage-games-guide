@@ -32,4 +32,5 @@ When you press the start button, the TV scoreboard will display the name/descrip
 - After two correct responses, your time is automatically recorded. You do NOT need to press the button again to finish the event.
 - If you have not input a correct response in 15 seconds you will receive a hint on the TV.
 - **Assistants may not in any way indicate the proper disc**. Assistants can read out the TV description/hint.
+- No reference material may be used after the run starts
 - To keep everyone on their toes, there are two possible disc prompts that do NOT exist on the wall. If you get one of these, enter ## then hit * to submit. This will count as a correct response.
