@@ -50,7 +50,7 @@ Each station* has a button labeled with the sign for that event. When the run be
 
 Events are worth a variable amount of points estimated for difficulty, and listed here in this guide. Each event is assigned a grace period in seconds, during which you can complete the event for the maximum number of points. After the grace period, points are subtracted for each second the event remains unfinished. 
 
-You can never score fewer than half the maximum amount of points for an event, regardless of how long it takes to complete the event.
+You can never score fewer than half the maximum amount of points for an event if you finish it, regardless of how long it takes to complete the event.
 
 If you begin an event, but then decide to switch to another event, your clock does not stop for the purposes of subtracting points. Thus it is rarely, if ever, advantageous to simply start an event and then instantly run to another event.
 
