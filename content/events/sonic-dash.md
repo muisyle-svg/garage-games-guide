@@ -16,9 +16,9 @@ Hit the lit button before time runs out.
 
 A random* button will begin flashing its light, and you will have 10 seconds to press it. The active button is also displayed on the TV. When pressed, a new random button will begin flashing.
 
-Every 10 seconds of elapsed time, the maximum time is reduced by 1 second. So after 30 seconds, you only have 7 seconds to get to the next button, then 7, and so on.
+Every 10 seconds of elapsed time, the maximum time is reduced by 1 second. So after 30 seconds, you only have 7 seconds to get to the next button, then 6, and so on.
 
-Each button press is worth an additional 5 points.
+Each button press is worth 5 points.
 
 Your run ends when you fail to hit a button in time, or your overall 5 minute run timer elapses.
 
