@@ -14,7 +14,7 @@ Sort the 4 target candies into their separate bowls.
 
 ## Setup
 
-All candy mixed in big bowl.
+All candy well mixed in the large bowl and covered
 
 ## Gameplay
 
