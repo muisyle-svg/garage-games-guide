@@ -23,6 +23,7 @@ Pick up as many darts as desired from the dart holders on the wall, push the dar
 ## Additional Guidelines and Clarifications
 
 - You may only throw one dart at a time.
+- Whenever setting the board in motion, the apparatus must touch the stop on the left. 
 - Any scoring dart must hit while the dart board is moving left to right, and before it hits the stop on the right side.
 - If the dartboard has stopped and you have not scored, you must go reset the board to the high side and try again.
 - You may not hit the finish button until the remaining darts are either in the board or back in the holders.
