@@ -25,4 +25,4 @@ Take the paddle off the wall and balance it vertically on one or more fingers or
 - You may not cup or squeeze the end of the paddle in your fingers/palm in any way.
 - Your entire body and the paddle must fully break the plane of the squat rack before returning.
 - You must demonstrate balance of the paddle while on the turf on the return before letting go of the paddle (no "falling finish").
-- You must be on the wall before hitting both the start and the finish buttons.
+- The paddle must be on the wall before hitting both the start and the finish buttons.
