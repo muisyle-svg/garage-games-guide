@@ -2,7 +2,7 @@
 title: 'Chaos Heist'
 order: 13
 points: 60
-grace_period: 15
+grace_period: 20
 points_per_second: 2
 finish: auto
 image: chaos-heist.svg
