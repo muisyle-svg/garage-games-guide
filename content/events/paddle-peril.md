@@ -1,8 +1,8 @@
 ---
 title: 'Paddle Peril'
 order: 6
-points: 80
-grace_period: 10
+points: 90
+grace_period: 15
 points_per_second: 1
 finish: button
 image: paddle-peril.svg
