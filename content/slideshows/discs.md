@@ -45,7 +45,7 @@ captions:
   - 'Summer League 2019'
   - 'Summer League 2008'
   - 'Summer League 2012'
-  - 'Fall League 2019'
+  - 'Fall League 2015'
   - 'MCUDL Summer League 2015'
   - 'MCUDL Elephants'
   - 'Summer League 2016'
