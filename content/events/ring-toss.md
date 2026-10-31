@@ -18,9 +18,11 @@ All bags on the stool.
 
 ## Gameplay
 
-Standing behind the white line, you must throw one cornhole bag through the gymnastics ring, and it must land and stay on the cornhole board, or pass through the hole.
+Standing behind your height marker, you must throw one cornhole bag through the gymnastics ring, and it must land and stay on the cornhole board, or pass through the hole.
 
 ## Additional Guidelines and Clarifications
 
+- Your height determines the marker you must stand behind. Under 5’4 may use the white line.
+- You may not jump or step forward while shooting.  
 - All shots must be taken underhand. You may NOT stop the ring from swinging.
 - The scoring bag must remain on the board or in the hole.
