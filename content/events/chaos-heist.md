@@ -16,6 +16,15 @@ Return the Emeralds, then enter 20 rings.
 
 All Emeralds spread to designated spots, all rings returned to bowl.
 
+Emerald locations:
+- Wall next to Arcade
+- Wooden leg of Hammer Table near ground
+- Champion plaque
+- Wall behind tool chest
+- Side of garage door track near floor
+- Weight plate next to Bocce the Moon
+- Hanging under squat rack
+
 ## Gameplay
 
 Sonic needs your help! The evil Dr. Robotnik has stolen the Chaos Emeralds from the shrine and scattered them across the land! Save the Garage Arcade by returning the emeralds, and using 20 rings to defeat Robotnik once and for all!
