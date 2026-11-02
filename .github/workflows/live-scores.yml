@@ -1,0 +1,15 @@
+# The scorekeeper app uploads scores.json to this branch. This run only marks the change:
+# when it finishes, main's "Deploy event guide" workflow rebuilds the site with the new scores.
+name: Live scores updated
+
+on:
+  push:
+    branches: [live-scores]
+
+permissions: {}
+
+jobs:
+  mark:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "scores.json changed; the Deploy event guide workflow publishes it."
