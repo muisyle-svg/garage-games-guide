@@ -364,3 +364,30 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 @keyframes sb-pop { from { transform: scale(.85); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .sb-callout { animation: none; } }
 .sb-tip-last { color: var(--muted); font-size: .76rem; margin: -1px 0 3px 18px; }
+
+/* ---------- Scores: runs on the course map ---------- */
+.sb-course { margin-top: 8px; }
+.sb-speed { font: inherit; font-size: .85rem; font-weight: 700; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 5px 8px; }
+.sb-course-frame { position: relative; width: 100%; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+.sb-course-frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.sb-course-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sb-course-trail { fill: none; stroke: var(--series); stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+.sb-course-dot { fill: var(--series); stroke: #fff; }
+.sb-course-tag { font-family: var(--font); font-weight: 800; fill: #1f1d19; paint-order: stroke; stroke: #fff; stroke-linejoin: round; }
+.sb-badge-ring { fill: var(--series); stroke: #fff; stroke-width: 1.5; }
+.sb-badge-mark { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sb-badge-left .sb-badge-ring, .sb-badge-missed .sb-badge-ring { fill: #fff; stroke: var(--series); stroke-width: 2.5; stroke-dasharray: 3 2; }
+.sb-badge-left .sb-badge-mark, .sb-badge-missed .sb-badge-mark { stroke: var(--series); }
+.sb-badge-missed .sb-badge-ring { stroke-dasharray: none; }
+.sb-badge-active .sb-badge-ring { fill: #fff; stroke: var(--series); stroke-width: 2.5; }
+.sb-badge-pip { fill: var(--series); }
+.sb-course-key .sb-course-key-badge { --series: var(--muted); }
+.sb-course-bar { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.sb-course-bar input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--link); }
+.sb-course-clock { font-variant-numeric: tabular-nums; font-size: .85rem; color: var(--muted); white-space: nowrap; }
+.sb-course-trails-toggle { display: flex; align-items: center; gap: 4px; font-size: .85rem; font-weight: 600; white-space: nowrap; }
+.sb-course-key { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .85rem; }
+.sb-course-key li { display: flex; align-items: center; gap: 6px; }
+.sb-swatch-dot { border-radius: 50%; }
+.sb-callout-compact { padding: 1px 6px 2px; border-left-width: 3px; border-radius: 6px; max-width: 13rem; }
+.sb-callout-compact .sb-callout-event { font-size: .7rem; }
