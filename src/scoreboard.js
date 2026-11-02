@@ -1001,14 +1001,15 @@
     const tl = courseTimeline(data, entry.run);
     const startBubble = COURSE.bubbles.find(b => b.key === nameKey(COURSE.start)) || COURSE.bubbles[0];
     const seatDeg = SEAT_ANGLES[index % SEAT_ANGLES.length];
-    const seat = b => onRim(b, seatDeg, COURSE.radius + 2);
+    // Players wait just outside the bubble's rim, so their big dots don't cover the name.
+    const seat = b => onRim(b, seatDeg, COURSE.radius + 12);
     const segments = [];
     let at = startBubble, prevT = 0;
     tl.visits.forEach((v, i) => {
       if (v.bubble !== at) {
         const key = `${entry.key}|${i}`;
         if (!coursePaths.has(key)) {
-          const a = onRim(at, seatDeg, COURSE.radius + 16), b = onRim(v.bubble, seatDeg, COURSE.radius + 16);
+          const a = onRim(at, seatDeg, COURSE.radius + 22), b = onRim(v.bubble, seatDeg, COURSE.radius + 22);
           coursePaths.set(key, [seat(at), ...planPath(a, b, key), seat(v.bubble)]);
         }
         const path = coursePaths.get(key);
@@ -1159,11 +1160,13 @@
     const dots = runs.map((r, i) => {
       const g = svgEl('g', { class: `sb-course-player sb-slot-${r.slot + 1}` });
       const dot = svgEl('circle', { class: 'sb-course-dot' });
+      const initial = svgEl('text', { class: 'sb-course-initial', 'text-anchor': 'middle' });
+      initial.textContent = (r.entry.name.trim()[0] || '?').toUpperCase();
       const tag = svgEl('text', { class: 'sb-course-tag', 'text-anchor': 'middle' });
       tag.textContent = tagFor(r, i);
-      g.append(dot, tag);
+      g.append(dot, initial, tag);
       playerG.append(g);
-      return { g, dot, tag };
+      return { g, dot, initial, tag };
     });
     const trails = runs.map(r => {
       const pl = svgEl('polyline', { class: `sb-course-trail sb-slot-${r.slot + 1}` });
@@ -1228,26 +1231,30 @@
         }
       });
 
-      // Players, with their name above the dot.
+      // Players: a big dot with their initial, and their name beside it.
+      const compactMap = (rect.width || COURSE.size) < 520;
       runs.forEach((r, i) => {
         const p = positions[i];
         const d = dots[i];
-        d.dot.setAttribute('cx', p.x); d.dot.setAttribute('cy', p.y); d.dot.setAttribute('r', px(6));
-        d.dot.style.strokeWidth = px(2);
+        d.dot.setAttribute('cx', p.x); d.dot.setAttribute('cy', p.y); d.dot.setAttribute('r', px(compactMap ? 9 : 13));
+        d.dot.style.strokeWidth = px(3);
+        d.initial.setAttribute('x', p.x); d.initial.setAttribute('y', p.y + px(compactMap ? 4 : 5.5));
+        d.initial.style.fontSize = `${px(compactMap ? 11 : 15)}px`;
         // The name sits outward from the bubble, so players sharing a bubble don't overlap,
         // and is kept inside the map.
         const deg = SEAT_ANGLES[i % SEAT_ANGLES.length] * Math.PI / 180;
         const ux = p.moving ? 0 : Math.cos(deg), uy = p.moving ? -1 : Math.sin(deg);
         const anchor = ux < -0.3 ? 'end' : ux > 0.3 ? 'start' : 'middle';
-        const width = px(d.tag.textContent.length * 6.6);
-        let tx = p.x + ux * px(10), ty = p.y + uy * px(10) + (uy > -0.5 ? px(4) : 0);
+        const width = px(d.tag.textContent.length * (compactMap ? 7.2 : 8.4));
+        const gap = compactMap ? 13 : 18;
+        let tx = p.x + ux * px(gap), ty = p.y + uy * px(gap) + (uy > -0.5 ? px(5) : 0);
         const left = anchor === 'end' ? tx - width : anchor === 'middle' ? tx - width / 2 : tx;
         if (left < 4) tx += 4 - left;
         if (left + width > COURSE.size - 4) tx -= left + width - (COURSE.size - 4);
         d.tag.setAttribute('text-anchor', anchor);
         d.tag.setAttribute('x', tx); d.tag.setAttribute('y', ty);
-        d.tag.style.fontSize = `${px(11)}px`;
-        d.tag.style.strokeWidth = `${px(3)}px`;
+        d.tag.style.fontSize = `${px(compactMap ? 12 : 14)}px`;
+        d.tag.style.strokeWidth = `${px(4)}px`;
       });
 
       // Trails.
