@@ -400,3 +400,6 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .sb-float-small .sb-float-big { font-size: 26px; }
 .sb-float-small .sb-float-sub { font-size: 17px; }
 .sb-course .sb-callout-event { font-size: .95rem; }
+
+/* A player's encore (candy burst) draws over everything on the map. */
+.sb-course-encore { pointer-events: none; }

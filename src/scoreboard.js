@@ -1008,6 +1008,9 @@
   const WALK_MS_PER_PX = 12;
   // On-screen sizes (pixels) of the player dots and the finished/unfinished badges.
   const DOT_PX = { wide: 52, narrow: 30 }, BADGE_PX = { wide: 14, narrow: 9 };
+  // Special encores after a run, by player name.
+  const ENCORES = { melindaalvey: { bubble: 'Sort & Sweet', effect: 'candy', ms: 5000, count: 110 } };
+  const ENCORE_PAUSE_MS = 600;
   let courseSeat = 30;             // how far outside a bubble's rim players wait, in map units       // run time to walk one map pixel (about 4 s across the garage)
 
   function buildCourseRun(data, slot, index, entry) {
@@ -1042,7 +1045,85 @@
       const leave = segments.find(s => s.from === e.bubble && s.depart >= e.start && (e.finish === null || s.depart < e.finish));
       if (leave) e.leftAt = leave.depart;
     }
-    return { slot, index, entry, tl, startBubble, segments, seat };
+    // A player's encore after their run: walk somewhere and set off a burst.
+    let encore = null;
+    const special = ENCORES[nameKey(entry.name)];
+    if (special) {
+      const to = COURSE.bubbles.find(b => b.key === nameKey(special.bubble));
+      let arrive = tl.endMs + ENCORE_PAUSE_MS;
+      if (to && to !== at) {
+        const key = `${entry.key}|encore|${courseSeat}`;
+        if (!coursePaths.has(key)) {
+          const a = onRim(at, seatDeg, COURSE.radius + courseSeat + 8), b = onRim(to, seatDeg, COURSE.radius + courseSeat + 8);
+          coursePaths.set(key, [seat(at), ...planPath(a, b, key), seat(to)]);
+        }
+        const path = coursePaths.get(key);
+        const lengths = [0];
+        for (let k = 1; k < path.length; k++) lengths.push(lengths[k - 1] + Math.hypot(path[k].x - path[k - 1].x, path[k].y - path[k - 1].y));
+        const total = lengths[lengths.length - 1];
+        const depart = arrive;
+        arrive = depart + total * WALK_MS_PER_PX;
+        segments.push({ from: at, to, depart, arrive, path, lengths, total, encore: true });
+      }
+      if (to) encore = { ...special, bubble: to, start: arrive + ENCORE_PAUSE_MS, end: arrive + ENCORE_PAUSE_MS + special.ms };
+    }
+    return { slot, index, entry, tl, startBubble, segments, seat, encore, endMs: encore ? encore.end : tl.endMs };
+  }
+
+  // Candy that bursts out of a dot and flies toward the viewer until it nearly fills the map.
+  // Each piece is worked out from how far into the burst we are, so scrubbing works.
+  const CANDY_COLORS = ['#e8384f', '#fd9a00', '#f6c600', '#2bb673', '#2a9df4', '#8e5cf7', '#ff5fa2'];
+  function candyPieces(seed, count) {
+    const rnd = seededRandom(seed);
+    const finale = Math.round(count * 0.35);
+    return Array.from({ length: count }, (_, i) => {
+      // A steady stream first, then a last big wave that arrives together and nearly
+      // covers the map before everything fades.
+      const last = i >= count - finale;
+      const n = last ? i - (count - finale) : i;
+      return {
+        kind: ['wrapped', 'lollipop', 'mint', 'gumdrop', 'wrapped', 'bean'][Math.floor(rnd() * 6)],
+        color: CANDY_COLORS[Math.floor(rnd() * CANDY_COLORS.length)],
+        color2: CANDY_COLORS[Math.floor(rnd() * CANDY_COLORS.length)],
+        launch: last ? 0.5 + (n / finale) * 0.08 : (n / (count - finale)) * 0.45 + rnd() * 0.04,
+        life: last ? 0.36 + rnd() * 0.06 : 0.3 + rnd() * 0.12,
+        last,
+        // Evenly around the circle for the last wave, so it covers the whole picture.
+        angle: last ? (n / finale) * Math.PI * 2 * 3.1 + rnd() * 0.6 : rnd() * Math.PI * 2,
+        reach: last ? 0.1 + Math.sqrt((n % Math.ceil(finale / 3) + rnd()) / Math.ceil(finale / 3)) * 0.85 : 0.25 + rnd() * 0.75,
+        spin: (rnd() - 0.5) * 900,
+        tilt: rnd() * 360,
+        size: last ? 1.1 + rnd() * 0.5 : 0.8 + rnd() * 0.5,
+      };
+    });
+  }
+  function candyShape(c) {
+    const g = svgEl('g', { class: 'sb-candy' });
+    const add = (tag, attrs) => { const n = svgEl(tag, attrs); g.append(n); return n; };
+    if (c.kind === 'wrapped') {
+      add('path', { d: 'M-0.55,0 L-1.15,-0.5 L-1.05,0 L-1.15,0.5 Z', fill: c.color2 });
+      add('path', { d: 'M0.55,0 L1.15,-0.5 L1.05,0 L1.15,0.5 Z', fill: c.color2 });
+      add('ellipse', { rx: 0.65, ry: 0.45, fill: c.color });
+      add('path', { d: 'M-0.2,-0.42 L0.05,0.43 M0.15,-0.44 L0.4,0.38', stroke: '#fff', 'stroke-width': 0.1, fill: 'none', opacity: 0.8 });
+    } else if (c.kind === 'lollipop') {
+      add('rect', { x: -0.06, y: 0.3, width: 0.12, height: 1.1, fill: '#f4efe6', stroke: '#c9bfae', 'stroke-width': 0.03 });
+      add('circle', { r: 0.6, fill: c.color });
+      add('path', { d: 'M0,0 m0.05,0 a0.1,0.1 0 1 1 -0.15,0.05 a0.22,0.22 0 1 1 0.35,-0.15 a0.35,0.35 0 1 1 -0.55,0.3 a0.5,0.5 0 1 1 0.78,-0.35', stroke: '#fff', 'stroke-width': 0.09, fill: 'none', opacity: 0.85 });
+    } else if (c.kind === 'mint') {
+      add('circle', { r: 0.6, fill: '#fff' });
+      for (let k = 0; k < 6; k++) {
+        const a = k * Math.PI / 3;
+        add('path', { d: `M0,0 L${(0.6 * Math.cos(a)).toFixed(3)},${(0.6 * Math.sin(a)).toFixed(3)} A0.6,0.6 0 0 1 ${(0.6 * Math.cos(a + 0.5)).toFixed(3)},${(0.6 * Math.sin(a + 0.5)).toFixed(3)} Z`, fill: c.color });
+      }
+      add('circle', { r: 0.6, fill: 'none', stroke: 'rgba(0,0,0,0.15)', 'stroke-width': 0.04 });
+    } else if (c.kind === 'gumdrop') {
+      add('path', { d: 'M-0.55,0.4 Q-0.6,-0.55 0,-0.55 Q0.6,-0.55 0.55,0.4 Z', fill: c.color });
+      add('path', { d: 'M-0.25,-0.3 Q-0.1,-0.42 0.1,-0.4', stroke: '#fff', 'stroke-width': 0.08, fill: 'none', opacity: 0.6 });
+    } else {
+      add('ellipse', { rx: 0.5, ry: 0.32, fill: c.color });
+      add('ellipse', { cx: -0.15, cy: -0.1, rx: 0.15, ry: 0.07, fill: '#fff', opacity: 0.5 });
+    }
+    return g;
   }
 
   function positionAt(pr, t) {
@@ -1112,7 +1193,7 @@
     const tagFor = (r, i) => firstNames.filter(n => n === firstNames[i]).length > 1
       ? `${firstNames[i]}${r.entry.category === 'official' ? '' : ` (${(CATEGORY[r.entry.category] || r.entry.category)[0]})`}`
       : firstNames[i];
-    const endMs = Math.max(...runs.map(r => r.tl.endMs));
+    const endMs = Math.max(...runs.map(r => r.endMs));
     course.t = Math.min(course.t, endMs);
 
     // Walking between events is played at a steady pace whatever the speed setting: while
@@ -1121,7 +1202,9 @@
     // the chosen speed.
     const walks = runs.flatMap(r => r.segments)
       .filter(s => s.arrive > s.depart)
-      .map(s => ({ from: s.depart, to: s.arrive, realMs: Math.max(500, Math.min(1000, s.total * 2.4)) }));
+      .map(s => ({ from: s.depart, to: s.arrive, realMs: Math.max(500, Math.min(1000, s.total * 2.4)) }))
+      // Encores play in real time whatever the speed: a beat before, then the burst.
+      .concat(runs.filter(r => r.encore).map(r => ({ from: r.encore.start - ENCORE_PAUSE_MS, to: r.encore.end, realMs: r.encore.end - r.encore.start + ENCORE_PAUSE_MS })));
     const cuts = [...new Set([0, endMs, ...walks.flatMap(w => [w.from, w.to])])].sort((a, b) => a - b);
     const spans = [];
     for (let i = 0; i < cuts.length - 1; i++) {
@@ -1145,7 +1228,8 @@
     const trailG = svgEl('g', { class: 'sb-course-trails' });
     const badgeG = svgEl('g');
     const playerG = svgEl('g');
-    svg.append(trailG, badgeG, playerG);
+    const encoreG = svgEl('g', { class: 'sb-course-encore' });
+    svg.append(trailG, badgeG, playerG, encoreG);
     const layer = el('div', 'sb-callouts');
     frame.append(img, svg, layer);
     box.append(frame);
@@ -1223,7 +1307,7 @@
       const hold = 1600 * course.speed;
       const cards = [], floats = [];
       runs.forEach((r, i) => {
-        const doneAt = Math.min(r.tl.endMs + 1200 * course.speed, endMs);
+        const doneAt = r.encore ? r.encore.end - (r.encore.end - r.encore.start) * 0.03 : Math.min(r.tl.endMs + 1200 * course.speed, endMs);
         if (t >= doneAt) {
           const done = r.tl.events.filter(e => e.finish !== null).length;
           cards.push({ id: `${r.entry.key}|end`, r, title: `${runs.length > 1 ? `${tagFor(r, i)}: ` : ''}${r.entry.run.totalPoints ?? ''} pts`,
@@ -1298,6 +1382,35 @@
         d.tag.setAttribute('x', tx); d.tag.setAttribute('y', ty);
         d.tag.style.fontSize = `${px(compactMap ? 12 : 16)}px`;
         d.tag.style.strokeWidth = `${px(4)}px`;
+      });
+
+      // Encores: candy bursting out of the player's dot toward the viewer.
+      runs.forEach((r, i) => {
+        const e = r.encore;
+        if (!e || e.effect !== 'candy') return;
+        if (!e.pieces) e.pieces = candyPieces(r.entry.key, e.count);
+        const f = (t - e.start) / (e.end - e.start);
+        const on = f >= 0 && f <= 1;
+        e.pieces.forEach((c, n) => {
+          const a0 = on ? (f - c.launch) / c.life : -1;
+          const a = c.last ? Math.min(a0, 1) : a0;
+          if (a < 0 || a > 1) { if (c.node) c.node.style.display = 'none'; return; }
+          if (!c.node) { c.node = candyShape(c); encoreG.append(c.node); }
+          // Depth: far away at the dot, rushing toward the camera. The vanishing point drifts
+          // from the dot to the middle of the map so the candy fills the picture.
+          const z = 1 - 0.93 * (1 - Math.pow(1 - a, 2.2));
+          const p = positions[i];
+          const drift = a * a * 0.7;
+          const cx = p.x + (COURSE.size / 2 - p.x) * drift, cy = p.y + (COURSE.size / 2 - p.y) * drift;
+          const spread = 40 * c.reach / z;
+          const x = cx + Math.cos(c.angle) * spread, y = cy + Math.sin(c.angle) * spread + a * a * 40;
+          const size = 9 * c.size / z;
+          c.node.style.display = '';
+          c.node.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(c.tilt + c.spin * a * c.life).toFixed(1)}) scale(${size.toFixed(2)})`);
+          // The early stream fades as it flies past; the last wave holds, then everything fades.
+          const hold = c.last ? Math.min(1, a * 8) : Math.min(1, a * 8) * (a > 0.85 ? (1 - a) / 0.15 : 1);
+          c.node.style.opacity = String(Math.max(0, hold) * (f > 0.86 ? Math.max(0, 0.97 - f) / 0.11 : 1));
+        });
       });
 
       // Trails.
