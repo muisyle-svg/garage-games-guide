@@ -177,7 +177,7 @@ async function loadSlideshow(e) {
 const link = (base, p) => base + (p === '' ? (EXPLICIT_INDEX ? 'index.html' : '')
   : EXPLICIT_INDEX ? p.replace(/\/$/, '/index.html') : p);
 
-function layout({ site, base, title, description, body, current }) {
+function layout({ site, base, title, description, body, current, scripts = [] }) {
   const full = title ? `${title} · ${site.title}` : `${site.title}: ${site.tagline}`;
   return `<!doctype html>
 <html lang="en">
@@ -192,14 +192,15 @@ function layout({ site, base, title, description, body, current }) {
 <link rel="icon" href="${base}icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="${base}style.css?v=${ASSET_VERSION}">
 <script src="${base}app.js?v=${ASSET_VERSION}" defer></script>
-</head>
+${scripts.map(s => `<script src="${base}${s}?v=${ASSET_VERSION}" defer></script>\n`).join('')}</head>
 <body data-base="${esc(base)}" data-explicit-index="${EXPLICIT_INDEX}">
 <a class="skip" href="#main">Skip to content</a>
 <header class="topbar">
-  <a class="brand" href="${link(base, '')}"><span class="brand-mark" aria-hidden="true"></span>${esc(site.title)}</a>
+  <a class="brand" href="${link(base, '')}"><span class="brand-mark" aria-hidden="true"></span>${esc(site.title).replace(/ (\d{4})$/, '<span class="brand-year">&nbsp;$1</span>')}</a>
   <nav aria-label="Main"><ul>
     <li><a href="${link(base, 'guidelines/')}"${current === 'guidelines' ? ' aria-current="page"' : ''}>How it works</a></li>
     <li><a href="${link(base, '')}#events"${current === 'home' ? ' aria-current="page"' : ''}>Events</a></li>
+    <li><a href="${link(base, 'scoreboard/')}"${current === 'scoreboard' ? ' aria-current="page"' : ''}>Scores</a></li>
   </ul></nav>
 </header>
 <main id="main" tabindex="-1">
@@ -368,6 +369,26 @@ function guidelinesPage(site, siteSections, events) {
   return layout({ site, base, title: 'How it works', body, current: 'guidelines' });
 }
 
+// Live standings, filled in by scoreboard.js from scores.json (uploaded by the scorekeeper).
+function scoreboardPage(site) {
+  const base = '../';
+  const body = `
+<article class="scoreboard" data-scoreboard>
+  <h1>Scores</h1>
+  <p class="sb-status" data-scoreboard-status aria-live="polite">Loading scores…</p>
+  <section aria-labelledby="overall-h">
+    <h2 id="overall-h">Leaderboard</h2>
+    <p class="sb-help">Tap a name to see their scorecard. Exhibition runs are listed by points without a rank.</p>
+    <div class="table-wrap" data-overall></div>
+  </section>
+  <section aria-labelledby="event-boards-h">
+    <h2 id="event-boards-h">Event leaderboards</h2>
+    <div data-event-boards></div>
+  </section>
+</article>`;
+  return layout({ site, base, title: 'Scores', description: 'Live Garage Games leaderboards.', body, current: 'scoreboard', scripts: ['scoreboard.js'] });
+}
+
 function notFoundPage(site) {
   // GitHub Pages serves 404.html at any URL depth, so relative links would break. A <base> tag
   // pointing at the site root (first path segment on *.github.io project sites) fixes them.
@@ -407,11 +428,13 @@ async function main() {
 
   const css = await fs.readFile(path.join(SRC, 'style.css'), 'utf8');
   const js = await fs.readFile(path.join(SRC, 'app.js'), 'utf8');
-  ASSET_VERSION = crypto.createHash('sha1').update(css + js).digest('hex').slice(0, 8);
+  const scoreboardJs = await fs.readFile(path.join(SRC, 'scoreboard.js'), 'utf8');
+  ASSET_VERSION = crypto.createHash('sha1').update(css + js + scoreboardJs).digest('hex').slice(0, 8);
 
   await prepareImages(events);
   await writeFile('style.css', css);
   await writeFile('app.js', js);
+  await writeFile('scoreboard.js', scoreboardJs);
   await fs.copyFile(path.join(SRC, 'icon.svg'), path.join(OUT, 'icon.svg'));
   await writeFile('manifest.webmanifest', JSON.stringify({
     name: site.title, short_name: 'Garage Games', description: site.description,
@@ -422,6 +445,7 @@ async function main() {
 
   await writeFile('index.html', homePage(site, events));
   await writeFile('guidelines/index.html', guidelinesPage(site, siteSections, events));
+  await writeFile('scoreboard/index.html', scoreboardPage(site));
   await writeFile('404.html', notFoundPage(site));
   // The How it works page moved from rules/ to guidelines/; send old links and bookmarks there.
   await writeFile('rules/index.html', '<!doctype html><meta charset="utf-8"><title>Moved</title><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0; url=../guidelines/"><link rel="canonical" href="../guidelines/"><a href="../guidelines/">How it works</a>');
@@ -431,13 +455,14 @@ async function main() {
   await writeFile('.nojekyll', '');
 
   // Service worker: precache every built file; the cache name changes whenever any file does.
-  const files = (await listFiles(OUT)).filter(f => !f.startsWith('.') && f !== '404.html' && f !== 'rules/index.html').sort();
+  // scores.json (copied in by the deploy workflow) is live data and is never precached.
+  const files = (await listFiles(OUT)).filter(f => !f.startsWith('.') && f !== '404.html' && f !== 'rules/index.html' && f !== 'scores.json').sort();
   const hash = crypto.createHash('sha1');
   for (const f of files) hash.update(f).update(await fs.readFile(path.join(OUT, f)));
   const precache = [];
   for (const f of files) {
     if (f.endsWith('index.html') && !EXPLICIT_INDEX) precache.push(f.slice(0, -'index.html'.length) || './');
-    else if (f === 'style.css' || f === 'app.js') precache.push(`${f}?v=${ASSET_VERSION}`);
+    else if (f === 'style.css' || f === 'app.js' || f === 'scoreboard.js') precache.push(`${f}?v=${ASSET_VERSION}`);
     else if (f.startsWith('images/')) precache.push(`${f}?v=${await fileVersion(f)}`);
     else precache.push(f);
   }

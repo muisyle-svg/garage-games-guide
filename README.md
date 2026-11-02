@@ -46,6 +46,14 @@ Any image file (`.svg`, `.jpg`, `.png`, `.gif`) dropped into `content/images/` a
 
 An event can show a captioned photo slideshow under its animation. Wall-D uses `slideshow: discs` in its front matter, which reads `content/slideshows/discs.md`: a `captions:` list paired in order with the photos in `content/images/discs/` (sorted by file name). To change it, swap photos in that folder and keep the captions list in the same order. The build warns if the counts differ.
 
+## Live scores
+
+The Scores page (`/scoreboard/`) shows the scorekeeper's leaderboards: the overall leaderboard (tap a name for that run's scorecard) and one leaderboard per event. `src/scoreboard.js` draws it from `scores.json`, refreshing every 30 seconds.
+
+The scorekeeper app uploads `scores.json` to the `live-scores` branch whenever the standings change (at most once a minute; setup is in the garage_games repo, `docs/PUBLIC-SCOREBOARD.md`). That branch's "Live scores updated" workflow sets off the deploy workflow, which builds `main` and copies the latest `scores.json` into the site. Nothing on `main` changes. Without a `scores.json` the page says scores appear once the games begin.
+
+To preview the page locally, put a `scores.json` in `dist/` after building.
+
 ## Building and previewing
 
 ```
