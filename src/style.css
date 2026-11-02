@@ -351,3 +351,9 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .sb-meter { display: block; height: 8px; margin-top: 4px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
 .sb-meter-fill { display: block; height: 100%; background: var(--link); border-radius: 0 4px 4px 0; }
 .sb-note { margin-top: 8px; }
+.sb-race-dim { opacity: .4; }
+.sb-race-focus .sb-race-line { stroke-width: 2.5; }
+.sb-race-label { font: 600 11px var(--font); fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.sb-tip-last { color: var(--muted); font-size: .76rem; margin: -1px 0 3px 18px; }
+.sb-legend-btn { font: inherit; color: var(--text); display: flex; align-items: center; gap: 6px; background: none; border: 1px solid transparent; border-radius: 999px; padding: 3px 9px 3px 7px; cursor: pointer; }
+.sb-legend-btn[aria-pressed="true"] { border-color: var(--series); background: var(--surface-2); font-weight: 700; }

@@ -349,6 +349,7 @@
   let picks = null;       // run ids being compared, in slot order (slot = color)
   let compareMode = 'points';
   let raceTimer = 0;
+  let raceFocus = null;   // the run whose events are labeled on the race chart
   let raceWidth = 0;
   addEventListener('resize', () => {
     if (lastData && picks && Math.abs(compareEl.clientWidth - raceWidth) > 40) renderCompare(lastData);
@@ -483,16 +484,26 @@
     play.type = 'button';
     head.append(play);
     box.append(head);
-    box.append(el('p', 'sb-help', 'Points over each run, a step for every event finished. Drag across the chart to compare any moment.'));
+    box.append(el('p', 'sb-help', slots.length > 1
+      ? 'Points over each run, a step for every event finished, labeled with the share of that event\'s starting points earned. Tap a name under the chart to label their events instead. Drag across the chart to compare any moment.'
+      : 'Points over the run, a step for every event finished, labeled with the share of that event\'s starting points earned. Drag across the chart to read any moment.'));
 
+    const guide = new Map(guideEvents.map(g => [nameKey(g.name), g]));
+    const share = st => {
+      const g = st.eventId ? guide.get(nameKey(st.name)) : null;
+      return Number.isFinite(g?.points) && g.points > 0 ? st.gained / g.points : null;
+    };
     const series = slots.map(s => ({ ...s, ...raceSteps(data, s.entry.run) }));
+    for (const s of series) for (const st of s.steps) st.share = share(st);
+    if (!series.some(s => s.entry.key === raceFocus)) raceFocus = series[0].entry.key;
+    const stepText = st => st.share !== null ? `${st.name} ${pct(st.share)}` : `${st.name} +${st.gained}`;
     const limitMs = Math.max(...series.map(s => s.limitMs));
     const top = Math.max(1, ...series.map(s => s.steps.length ? s.steps[s.steps.length - 1].total : 0));
     const yStep = top > 600 ? 200 : top > 250 ? 100 : 50;
     const yMax = Math.ceil(top / yStep) * yStep;
     // Drawn at the size it's shown, so the labels stay readable on a phone.
     const W = Math.round(Math.max(280, Math.min(900, (compareEl.clientWidth || 640) - 30)));
-    const H = W < 500 ? 240 : 300, L = 40, R = 10, T = 12, B = 30;
+    const H = W < 500 ? 320 : 360, L = 40, R = 10, T = 12, B = 30;
     raceWidth = compareEl.clientWidth;
     const x = t => L + (t / limitMs) * (W - L - R);
     const y = p => T + (1 - p / yMax) * (H - T - B);
@@ -521,22 +532,65 @@
     defs.append(clip);
     svg.append(defs);
 
+    // The labeled run is drawn last so it sits on top of the others.
     const lines = svgEl('g', { 'clip-path': `url(#${clipId})` });
-    for (const s of series) {
+    const ordered = [...series].sort((a, b) => (a.entry.key === raceFocus) - (b.entry.key === raceFocus));
+    for (const s of ordered) {
+      const focused = s.entry.key === raceFocus;
       let d = `M${x(0)},${y(0)}`;
       for (const st of s.steps) d += `H${x(st.t)}V${y(st.total)}`;
-      const g = svgEl('g', { class: `sb-slot-${s.slot + 1}` });
+      const g = svgEl('g', { class: `sb-slot-${s.slot + 1}${focused ? ' sb-race-focus' : series.length > 1 ? ' sb-race-dim' : ''}` });
       g.append(svgEl('path', { d, class: 'sb-race-line' }));
       for (const st of s.steps) {
-        const c = svgEl('circle', { cx: x(st.t), cy: y(st.total), r: 4, class: 'sb-race-dot' });
+        const c = svgEl('circle', { cx: x(st.t), cy: y(st.total), r: focused ? 5 : 3.5, class: 'sb-race-dot' });
         const tip = svgEl('title');
-        tip.textContent = `${s.entry.label}: ${st.name} +${st.gained} at ${formatClock(st.t)} (${st.total} pts)`;
+        tip.textContent = `${s.entry.label}: ${stepText(st)} (+${st.gained}) at ${formatClock(st.t)}, ${st.total} pts total`;
         c.append(tip);
         g.append(c);
       }
+      if (focused) g.append(raceLabels(s.steps));
       lines.append(g);
     }
     svg.append(lines);
+
+    // Each event's name and share of its starting points, written upright beside its step:
+    // above the line while there's room, below it once the line has climbed. Events that
+    // finish close together are nudged apart so their labels don't overlap.
+    function raceLabels(steps) {
+      const g = svgEl('g', { class: 'sb-race-labels' });
+      const GAP = 12;
+      const lastX = { above: -Infinity, below: -Infinity };
+      const charW = 6.1;
+      for (const st of steps) {
+        if (!st.eventId) continue;
+        const px = x(st.t), py = y(st.total);
+        const roomAbove = py - T - 8;
+        const roomBelow = (H - B) - py - 10;
+        let text = stepText(st);
+        const need = text.length * charW;
+        let side = roomAbove >= need || roomAbove >= roomBelow ? 'above' : 'below';
+        if (px - lastX[side] < GAP) {
+          const other = side === 'above' ? 'below' : 'above';
+          const otherRoom = other === 'above' ? roomAbove : roomBelow;
+          if (px - lastX[other] >= GAP && otherRoom >= Math.min(need, 60)) side = other;
+        }
+        const lx = Math.max(px, lastX[side] + GAP);
+        lastX[side] = lx;
+        const room = side === 'above' ? roomAbove : roomBelow;
+        if (need > room) {
+          // Keep the percentage; shorten the event name to fit.
+          const tail = st.share !== null ? ` ${pct(st.share)}` : ` +${st.gained}`;
+          const keep = Math.max(0, Math.floor(room / charW) - tail.length - 1);
+          text = keep >= 3 ? `${st.name.slice(0, keep).trimEnd()}…${tail}` : tail.trim();
+        }
+        const ly = side === 'above' ? py - 8 : py + 10;
+        const label = svgEl('text', { x: lx + 4, y: ly, transform: `rotate(-90 ${lx + 4} ${ly})`,
+          'text-anchor': side === 'above' ? 'start' : 'end', class: 'sb-race-label' });
+        label.textContent = text;
+        g.append(label);
+      }
+      return g;
+    }
 
     const cross = svgEl('line', { class: 'sb-cross', y1: T, y2: H - B, x1: 0, x2: 0 });
     cross.style.display = 'none';
@@ -566,6 +620,7 @@
         const row = el('div', `sb-tip-row sb-slot-${n.s.slot + 1}`);
         row.append(el('span', 'sb-swatch'), el('span', 'sb-tip-name', n.s.entry.label), el('span', 'sb-tip-pts', String(n.total)));
         tip.append(row);
+        if (n.last?.eventId) tip.append(el('div', 'sb-tip-last', `Last: ${stepText(n.last)}`));
       }
       tip.hidden = false;
       const left = (x(t) / W) * r.width;
@@ -583,7 +638,7 @@
       if (reduceMotion) { clipRect.setAttribute('width', W); return; }
       const started = performance.now();
       const step = now => {
-        const f = Math.min(1, (now - started) / 6000);
+        const f = Math.min(1, (now - started) / 9000);
         clipRect.setAttribute('width', L + f * (W - L - R) + 6);
         if (f < 1) raceTimer = requestAnimationFrame(step); else clipRect.setAttribute('width', W);
       };
@@ -591,10 +646,22 @@
     };
     play.addEventListener('click', replay);
 
+    // With more than one player, the legend picks whose events are labeled.
     const legend = el('ul', 'sb-legend');
     for (const s of series) {
       const li = el('li', `sb-slot-${s.slot + 1}`);
-      li.append(el('span', 'sb-swatch'), el('span', '', s.entry.label));
+      if (series.length > 1) {
+        const b = el('button', 'sb-legend-btn');
+        b.type = 'button';
+        b.setAttribute('aria-pressed', String(s.entry.key === raceFocus));
+        b.append(el('span', 'sb-swatch'), el('span', '', s.entry.label));
+        b.addEventListener('click', () => {
+          raceFocus = s.entry.key;
+          const old = box;
+          old.replaceWith(renderRace(data, slots));
+        });
+        li.append(b);
+      } else li.append(el('span', 'sb-swatch'), el('span', '', s.entry.label));
       legend.append(li);
     }
     box.append(legend);
