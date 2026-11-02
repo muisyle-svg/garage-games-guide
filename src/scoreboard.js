@@ -1166,6 +1166,7 @@
 
     const badgeEls = new Map();
     const popupEls = new Map();
+    const floatEls = new Map();
     const dots = runs.map((r, i) => {
       const g = svgEl('g', { class: `sb-course-player sb-slot-${r.slot + 1}` });
       const dot = svgEl('circle', { class: 'sb-course-dot' });
@@ -1183,37 +1184,36 @@
       return pl;
     });
 
+    // What pops up at time t. Results float up from the event as big "+45 / 12s" text in
+    // the player's color and fade; once a run is over, only its final score shows.
+    const shortTime = ms => (ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))}s` : formatClock(ms));
     function popupsAt(t) {
-      const hold = 2200 * course.speed;
-      const out = [];
-      for (const r of runs) {
-        const who = runs.length > 1 ? ` · ${r.entry.name.split(/\s+/)[0]}` : '';
+      const hold = 1600 * course.speed;
+      const cards = [], floats = [];
+      runs.forEach((r, i) => {
+        const doneAt = Math.min(r.tl.endMs + 1200 * course.speed, endMs);
+        if (t >= doneAt) {
+          const done = r.tl.events.filter(e => e.finish !== null).length;
+          cards.push({ id: `${r.entry.key}|end`, r, title: `${runs.length > 1 ? `${tagFor(r, i)}: ` : ''}${r.entry.run.totalPoints ?? ''} pts`,
+            meta: `${done} of ${r.tl.events.length} events finished` });
+          return;
+        }
+        const spread = (i - (runs.length - 1) / 2) * 40;
+        const float = (id, t0, at, big, small) => {
+          if (t < t0 || t >= t0 + hold) return;
+          floats.push({ id: `${r.entry.key}|${id}`, r, x: at.x, y: at.y, big, small, age: (t - t0) / hold });
+        };
         for (const e of r.tl.events) {
-          if (e.finish !== null && t >= e.finish && t < e.finish + hold) {
-            const g = guideEvents.find(x => nameKey(x.name) === nameKey(e.name));
-            const share = Number.isFinite(g?.points) && g.points > 0 ? ` (${pct(e.points / g.points)})` : '';
-            out.push({ id: `${r.entry.key}|${e.eventId}|f`, r, anchor: e.bubble, title: `${e.name} ✓`, short: `${e.points}${share}`,
-              meta: `${e.points} pts${share}${e.durationMs !== null ? ` in ${formatClock(e.durationMs)}` : ''}${who}`, fade: t > e.finish + hold * 0.75 });
-          }
-          if (e.leftAt !== null && t >= e.leftAt && t < e.leftAt + hold) {
-            out.push({ id: `${r.entry.key}|${e.eventId}|l`, r, anchor: e.bubble, title: `${e.name}: left unfinished`, short: '',
-              meta: `after ${formatClock(e.leftAt - e.start)}${who}`, fade: t > e.leftAt + hold * 0.75 });
-          }
+          const over = { x: e.bubble.x + spread, y: e.bubble.y - COURSE.radius * 0.2 };
+          if (e.finish !== null) float(`${e.eventId}|f`, e.finish, over, `+${e.points}`, e.durationMs !== null ? shortTime(e.durationMs) : '');
+          if (e.leftAt !== null) float(`${e.eventId}|l`, e.leftAt, over, 'left', shortTime(e.leftAt - e.start));
         }
         const bonus = r.tl.bonus?.result;
-        if (bonus && Number.isFinite(bonus.startElapsedMs) && t >= bonus.startElapsedMs && t < (bonus.status === 'completed' && Number.isFinite(bonus.finishElapsedMs) ? bonus.finishElapsedMs : r.tl.endMs)) {
-          out.push({ id: `${r.entry.key}|bonus|s`, r, anchor: null, title: r.tl.bonus.name, short: '', meta: `Bonus round${who}`, fade: false });
+        if (bonus?.status === 'completed' && Number.isFinite(bonus.finishElapsedMs)) {
+          float('bonus', bonus.finishElapsedMs, positionAt(r, bonus.finishElapsedMs), `+${bonus.points}`, 'bonus');
         }
-        if (bonus?.status === 'completed' && Number.isFinite(bonus.finishElapsedMs) && t >= bonus.finishElapsedMs && t < bonus.finishElapsedMs + hold) {
-          out.push({ id: `${r.entry.key}|bonus|f`, r, anchor: null, title: `${r.tl.bonus.name} ✓`, short: `+${bonus.points}`, meta: `+${bonus.points} pts${who}`, fade: t > bonus.finishElapsedMs + hold * 0.75 });
-        }
-        if (t >= r.tl.endMs && t < r.tl.endMs + hold * 1.5) {
-          const done = r.tl.events.filter(e => e.finish !== null).length;
-          out.push({ id: `${r.entry.key}|end`, r, anchor: null, title: `Run over: ${r.entry.run.totalPoints ?? ''} pts`, short: '',
-            meta: `${done} of ${r.tl.events.length} events finished${who}`, fade: false });
-        }
-      }
-      return out;
+      });
+      return { cards, floats };
     }
 
     function draw() {
@@ -1277,7 +1277,42 @@
       });
 
       // Popups beside the event (or the player), placed so they don't cover each other.
-      const wanted = popupsAt(t);
+      const { cards: wanted, floats } = popupsAt(t);
+
+      // Floating results: rise and fade, with no box around them.
+      const keepFloat = new Set(floats.map(f => f.id));
+      for (const [id, node] of floatEls) if (!keepFloat.has(id)) { node.remove(); floatEls.delete(id); }
+      const floatBoxes = [];
+      for (const f of floats) {
+        let n = floatEls.get(f.id);
+        if (!n) {
+          n = el('div', `sb-float sb-slot-${f.r.slot + 1}${compactMap ? ' sb-float-small' : ''}`);
+          n.append(el('span', 'sb-float-big', f.big));
+          if (f.small) n.append(el('span', 'sb-float-sub', f.small));
+          layer.append(n);
+          floatEls.set(f.id, n);
+        }
+        const rise = f.age * (compactMap ? 22 : 40);
+        const scale = f.age < 0.08 ? 0.6 + f.age * 5 : 1;
+        // Kept inside the map, and stacked upward if another result is already there.
+        const fw = n.offsetWidth, fh = n.offsetHeight;
+        const FW = rect.width || COURSE.size;
+        const FH = rect.height || COURSE.size;
+        const baseX = f.x * k, baseY = f.y * k - rise;
+        const fits = (x, y) => x - fw / 2 >= 0 && x + fw / 2 <= FW && y - fh >= 0 && y <= FH &&
+          !floatBoxes.some(o => x - fw / 2 < o.right && x + fw / 2 > o.left && y - fh < o.bottom && y > o.top);
+        let cx = Math.max(fw / 2 + 2, Math.min(FW - fw / 2 - 2, baseX)), bottom = Math.max(fh + 2, baseY);
+        for (const [dx, dy] of [[0, 0], [0, -1], [1, 0], [-1, 0], [0, 1], [1, 1], [-1, 1], [2, 0], [-2, 0], [0, 2]]) {
+          const x = Math.max(fw / 2 + 2, Math.min(FW - fw / 2 - 2, baseX + dx * (fw + 4)));
+          const y = Math.max(fh + 2, baseY + dy * (fh + 2));
+          if (fits(x, y)) { cx = x; bottom = y; break; }
+        }
+        floatBoxes.push({ left: cx - fw / 2, right: cx + fw / 2, top: bottom - fh, bottom });
+        n.style.left = `${cx}px`;
+        n.style.top = `${bottom}px`;
+        n.style.opacity = String(f.age < 0.6 ? 1 : Math.max(0, 1 - (f.age - 0.6) / 0.4));
+        n.style.transform = `translate(-50%, -100%) scale(${scale})`;
+      }
       const W0 = rect.width || COURSE.size;
       const keep = new Set(wanted.map(w => `${w.id}|${W0 < 520 ? 'c' : 'f'}`));
       for (const [id, node] of popupEls) if (!keep.has(id)) { node.remove(); popupEls.delete(id); }
@@ -1301,7 +1336,7 @@
         c.classList.toggle('sb-callout-fade', !!w.fade);
         const cw = c.offsetWidth, ch = c.offsetHeight;
         const anchor = w.anchor || positions[runs.indexOf(w.r)];
-        const ax = anchor.x * k, ay = anchor.y * k, gap = (w.anchor ? COURSE.radius + 6 : 12) * k;
+        const ax = anchor.x * k, ay = anchor.y * k, gap = w.anchor ? (COURSE.radius + 6) * k : (compactMap ? DOT_PX.narrow : DOT_PX.wide) / 2 + 6;
         let spot = null;
         for (let off = 0; off < 12 && !spot; off++) {
           for (const [dx, dy] of [[0, -1], [0, 1], [1, 0], [-1, 0]]) {

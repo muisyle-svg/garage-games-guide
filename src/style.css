@@ -393,3 +393,10 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .sb-callout-compact .sb-callout-event { font-size: .7rem; }
 .sb-course-initial { font-family: var(--font); font-weight: 800; fill: #fff; pointer-events: none; }
 .sb-course-dot { filter: drop-shadow(0 1px 2px rgb(0 0 0 / .45)); }
+.sb-float { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: .95; color: var(--series); font-family: var(--font-display); font-weight: 900; pointer-events: none; white-space: nowrap; transform-origin: 50% 100%; -webkit-text-stroke: 6px #fff; paint-order: stroke fill; text-shadow: 0 2px 6px rgb(0 0 0 / .35); }
+.sb-float-big { font-size: 46px; letter-spacing: -.02em; }
+.sb-float-sub { font-size: 28px; }
+.sb-float-small { -webkit-text-stroke-width: 4px; }
+.sb-float-small .sb-float-big { font-size: 26px; }
+.sb-float-small .sb-float-sub { font-size: 17px; }
+.sb-course .sb-callout-event { font-size: .95rem; }
