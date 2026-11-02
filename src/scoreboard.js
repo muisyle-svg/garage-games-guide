@@ -349,6 +349,7 @@
   let picks = null;       // run ids being compared, in slot order (slot = color)
   let compareMode = 'points';
   let raceTimer = 0;
+  const pinned = new Set();   // race chart callouts tapped open, as "runId|eventId"
   let raceWidth = 0;
   addEventListener('resize', () => {
     if (lastData && picks && Math.abs(compareEl.clientWidth - raceWidth) > 40) renderCompare(lastData);
@@ -473,26 +474,39 @@
     compareEl.replaceChildren(wrap);
   }
 
-  // Running points over the run, one line per player, with a crosshair to read any moment.
+  // Running points over the run, one line per player. The chart stays clean: event callouts
+  // pop up as each line reaches an event during Replay and then fade, and tapping a dot pins
+  // its callout (tap again to hide it). A crosshair reads everyone's total at any moment.
   function renderRace(data, slots) {
     cancelAnimationFrame(raceTimer);
     const box = el('div', 'sb-race');
     const head = el('div', 'sb-chart-head');
     head.append(el('h3', '', 'Run race'));
+    const buttons = el('div', 'sb-race-buttons');
+    const allBtn = el('button', 'sb-play', 'Clear labels');
+    allBtn.type = 'button';
+    allBtn.hidden = true;
     const play = el('button', 'sb-play', 'Replay');
     play.type = 'button';
-    head.append(play);
+    buttons.append(allBtn, play);
+    head.append(buttons);
     box.append(head);
-    box.append(el('p', 'sb-help', 'Points over each run, a step for every event finished. Drag across the chart to compare any moment.'));
+    box.append(el('p', 'sb-help', 'A step for every event finished. Tap a dot to see the event and the share of its starting points earned (tap again to hide). Replay shows each one as it happens.'));
 
+    const guide = new Map(guideEvents.map(g => [nameKey(g.name), g]));
+    const share = st => {
+      const g = st.eventId ? guide.get(nameKey(st.name)) : null;
+      return Number.isFinite(g?.points) && g.points > 0 ? st.gained / g.points : null;
+    };
     const series = slots.map(s => ({ ...s, ...raceSteps(data, s.entry.run) }));
+    for (const s of series) for (const st of s.steps) { st.share = share(st); st.pin = `${s.entry.key}|${st.eventId}`; }
     const limitMs = Math.max(...series.map(s => s.limitMs));
     const top = Math.max(1, ...series.map(s => s.steps.length ? s.steps[s.steps.length - 1].total : 0));
     const yStep = top > 600 ? 200 : top > 250 ? 100 : 50;
     const yMax = Math.ceil(top / yStep) * yStep;
-    // Drawn at the size it's shown, so the labels stay readable on a phone.
+    // Drawn at the size it's shown, so the text stays readable on a phone.
     const W = Math.round(Math.max(280, Math.min(900, (compareEl.clientWidth || 640) - 30)));
-    const H = W < 500 ? 240 : 300, L = 40, R = 10, T = 12, B = 30;
+    const H = W < 500 ? 280 : 340, L = 40, R = 10, T = 12, B = 30;
     raceWidth = compareEl.clientWidth;
     const x = t => L + (t / limitMs) * (W - L - R);
     const y = p => T + (1 - p / yMax) * (H - T - B);
@@ -521,32 +535,125 @@
     defs.append(clip);
     svg.append(defs);
 
+    const leaders = svgEl('g', { class: 'sb-leaders' });
     const lines = svgEl('g', { 'clip-path': `url(#${clipId})` });
+    const dotsByPin = new Map();
+    const targets = [];
+    const togglePin = pin => {
+      if (pinned.has(pin)) pinned.delete(pin); else pinned.add(pin);
+      drawCallouts();
+    };
     for (const s of series) {
       let d = `M${x(0)},${y(0)}`;
       for (const st of s.steps) d += `H${x(st.t)}V${y(st.total)}`;
       const g = svgEl('g', { class: `sb-slot-${s.slot + 1}` });
       g.append(svgEl('path', { d, class: 'sb-race-line' }));
       for (const st of s.steps) {
-        const c = svgEl('circle', { cx: x(st.t), cy: y(st.total), r: 4, class: 'sb-race-dot' });
-        const tip = svgEl('title');
-        tip.textContent = `${s.entry.label}: ${st.name} +${st.gained} at ${formatClock(st.t)} (${st.total} pts)`;
-        c.append(tip);
-        g.append(c);
+        const dot = svgEl('circle', { cx: x(st.t), cy: y(st.total), r: 4, class: 'sb-race-dot' });
+        g.append(dot);
+        if (!st.eventId) continue;
+        dotsByPin.set(st.pin, dot);
+        // Taps go to the nearest dot (see below); this ring is for keyboard users.
+        const hit = svgEl('circle', { cx: x(st.t), cy: y(st.total), r: 8, class: 'sb-race-hit', tabindex: 0, role: 'button',
+          'aria-label': `${s.entry.label}: ${calloutTitle(st)}. ${pinned.has(st.pin) ? 'Hide' : 'Show'} label.` });
+        const toggle = () => togglePin(st.pin);
+        targets.push({ px: x(st.t), py: y(st.total), pin: st.pin });
+        hit.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+        g.append(hit);
       }
       lines.append(g);
     }
-    svg.append(lines);
+    svg.append(leaders, lines);
 
     const cross = svgEl('line', { class: 'sb-cross', y1: T, y2: H - B, x1: 0, x2: 0 });
     cross.style.display = 'none';
     svg.append(cross);
     const frame = el('div', 'sb-race-frame');
+    const layer = el('div', 'sb-callouts');
     const tip = el('div', 'sb-tip');
     tip.hidden = true;
-    frame.append(svg, tip);
+    frame.append(svg, layer, tip);
     box.append(frame);
 
+    // ----- callouts -----
+    const transient = new Map();   // series slot -> the callout Replay is showing for it
+    const calloutEls = new Map();  // pin -> callout element on screen
+    function calloutTitle(st) { return st.share !== null ? `${st.name} · ${pct(st.share)}` : `${st.name} · +${st.gained}`; }
+
+    // Places every visible callout beside its dot, upright, trying spots above then below
+    // (then further out) until it clears the others, and joins it to the dot with a line.
+    function drawCallouts() {
+      const wanted = [];
+      for (const s of series) {
+        for (const st of s.steps) if (st.eventId && pinned.has(st.pin)) wanted.push({ s, st, fading: false });
+        const tr = transient.get(s.slot);
+        if (tr && !pinned.has(tr.st.pin)) wanted.push({ s, st: tr.st, fading: tr.fading, live: true });
+      }
+      leaders.replaceChildren();
+      for (const [pin, dot] of dotsByPin) dot.classList.toggle('sb-race-dot-on', pinned.has(pin));
+      allBtn.hidden = !series.some(s => s.steps.some(st => st.eventId && pinned.has(st.pin)));
+      // Reuse the callouts already on screen so only new ones pop in.
+      const keep = new Set(wanted.map(w => w.st.pin));
+      for (const [pin, node] of calloutEls) if (!keep.has(pin)) { node.remove(); calloutEls.delete(pin); }
+      if (!wanted.length) return;
+      const rect = frame.getBoundingClientRect();
+      const scale = (rect.width || W) / W;
+      const placed = [];
+      const plotTop = 0, plotBottom = (H - B) * scale;
+      for (const w of wanted) {
+        let c = calloutEls.get(w.st.pin);
+        if (!c) {
+          c = el('div', `sb-callout sb-slot-${w.s.slot + 1}`);
+          c.append(el('span', 'sb-callout-event', calloutTitle(w.st)));
+          c.append(el('span', 'sb-callout-meta', `+${w.st.gained} at ${formatClock(w.st.t)}${series.length > 1 && W >= 500 ? ` · ${w.s.entry.name}` : ''}`));
+          layer.append(c);
+          calloutEls.set(w.st.pin, c);
+        }
+        c.classList.toggle('sb-callout-fade', w.fading);
+        const cw = c.offsetWidth, ch = c.offsetHeight;
+        const dx = x(w.st.t) * scale, dy = y(w.st.total) * scale;
+        let spot = null;
+        // During Replay the lines grow rightward, so callouts lean right, over what's not drawn yet.
+        const shifts = w.live ? [0.1, 0, -0.5, -1, 0.5, 1, 1.5] : [0.5, 0.15, 0.85, 0, 1, -0.5, 1.5, -1, 2];
+        for (let off = 0; off < 16; off++) {
+          for (const dir of [-1, 1]) {
+            const top = dir < 0 ? dy - 14 - ch - off * (ch + 6) / 2 : dy + 14 + off * (ch + 6) / 2;
+            if (top < plotTop || top + ch > plotBottom + 4) continue;
+            for (const shift of shifts) {
+              const left = Math.max(0, Math.min((rect.width || W) - cw, dx - cw * shift));
+              const box2 = { left, top, right: left + cw, bottom: top + ch };
+              if (!placed.some(p => box2.left < p.right + 4 && box2.right > p.left - 4 && box2.top < p.bottom + 4 && box2.bottom > p.top - 4)) {
+                spot = box2;
+                break;
+              }
+            }
+            if (spot) break;
+          }
+          if (spot) break;
+        }
+        if (!spot) {
+          const top = Math.max(plotTop, dy - 14 - ch);
+          const left = Math.max(0, Math.min((rect.width || W) - cw, dx - cw / 2));
+          spot = { left, top, right: left + cw, bottom: top + ch };
+        }
+        placed.push(spot);
+        c.style.left = `${spot.left}px`;
+        c.style.top = `${spot.top}px`;
+        // Leader line from the dot to the nearest edge of the callout.
+        const ex = Math.max(spot.left, Math.min(spot.right, dx));
+        const ey = spot.bottom < dy ? spot.bottom : spot.top;
+        const line = svgEl('line', { x1: dx / scale, y1: dy / scale, x2: ex / scale, y2: ey / scale,
+          class: `sb-leader sb-slot-${w.s.slot + 1}${w.fading ? ' sb-callout-fade' : ''}` });
+        leaders.append(line);
+      }
+    }
+
+    allBtn.addEventListener('click', () => {
+      for (const s of series) for (const st of s.steps) pinned.delete(st.pin);
+      drawCallouts();
+    });
+
+    // ----- crosshair -----
     const at = (s, t) => {
       let total = 0;
       let last = null;
@@ -566,6 +673,7 @@
         const row = el('div', `sb-tip-row sb-slot-${n.s.slot + 1}`);
         row.append(el('span', 'sb-swatch'), el('span', 'sb-tip-name', n.s.entry.label), el('span', 'sb-tip-pts', String(n.total)));
         tip.append(row);
+        if (n.last?.eventId) tip.append(el('div', 'sb-tip-last', `Last: ${calloutTitle(n.last)}`));
       }
       tip.hidden = false;
       const left = (x(t) / W) * r.width;
@@ -573,19 +681,72 @@
       tip.classList.toggle('sb-tip-left', left > r.width / 2);
     };
     const hide = () => { cross.style.display = 'none'; tip.hidden = true; };
-    svg.addEventListener('pointermove', e => show(e.clientX));
-    svg.addEventListener('pointerdown', e => show(e.clientX));
+    // The dot nearest the pointer, if it's close enough to mean that dot (dots can sit
+    // closer together than a fingertip, so this beats per-dot hit areas).
+    const nearestDot = e => {
+      const r = svg.getBoundingClientRect();
+      const px = ((e.clientX - r.left) / r.width) * W;
+      const py = ((e.clientY - r.top) / r.height) * H;
+      const reach = (e.pointerType === 'mouse' ? 9 : 16) * (W / r.width);
+      let best = null, bestD = reach;
+      for (const tg of targets) {
+        const d = Math.hypot(tg.px - px, tg.py - py);
+        if (d <= bestD) { best = tg; bestD = d; }
+      }
+      return best;
+    };
+    svg.addEventListener('pointermove', e => {
+      const near = nearestDot(e);
+      svg.style.cursor = near ? 'pointer' : '';
+      if (e.pointerType === 'mouse') { if (near) hide(); else show(e.clientX); }
+      else if (!near) show(e.clientX);
+    });
+    svg.addEventListener('pointerdown', e => { if (!nearestDot(e)) show(e.clientX); });
+    svg.addEventListener('click', e => {
+      const near = nearestDot(e);
+      if (near) { hide(); togglePin(near.pin); }
+    });
     svg.addEventListener('pointerleave', hide);
 
-    // Draw the lines left to right, like watching the runs side by side.
-    const replay = () => {
+    // ----- replay -----
+    // Draws the lines left to right; as each line reaches an event its callout pops up and
+    // fades, one per player at a time.
+    const REPLAY_MS = 20000;
+    const HOLD_MS = 1600;
+    let playing = false;
+    const stop = () => {
       cancelAnimationFrame(raceTimer);
+      playing = false;
+      play.textContent = 'Replay';
+      clipRect.setAttribute('width', W);
+      transient.clear();
+      drawCallouts();
+    };
+    const replay = () => {
+      if (playing) { stop(); return; }
+      cancelAnimationFrame(raceTimer);
+      transient.clear();
       if (reduceMotion) { clipRect.setAttribute('width', W); return; }
+      playing = true;
+      play.textContent = 'Stop';
       const started = performance.now();
       const step = now => {
-        const f = Math.min(1, (now - started) / 6000);
-        clipRect.setAttribute('width', L + f * (W - L - R) + 6);
-        if (f < 1) raceTimer = requestAnimationFrame(step); else clipRect.setAttribute('width', W);
+        if (!box.isConnected) { cancelAnimationFrame(raceTimer); return; }
+        const elapsed = now - started;
+        const f = Math.min(1, elapsed / REPLAY_MS);
+        const t = f * limitMs;
+        clipRect.setAttribute('width', x(t) + 6);
+        let changed = false;
+        for (const s of series) {
+          const reached = s.steps.filter(st => st.eventId && st.t <= t);
+          const latest = reached[reached.length - 1];
+          const cur = transient.get(s.slot);
+          if (latest && cur?.st !== latest) { transient.set(s.slot, { st: latest, shownAt: elapsed, fading: false }); changed = true; }
+          else if (cur && !cur.fading && elapsed - cur.shownAt > HOLD_MS) { cur.fading = true; changed = true; }
+          else if (cur && cur.fading && elapsed - cur.shownAt > HOLD_MS + 500) { transient.delete(s.slot); changed = true; }
+        }
+        if (changed) drawCallouts();
+        if (f < 1 || transient.size) raceTimer = requestAnimationFrame(step); else stop();
       };
       raceTimer = requestAnimationFrame(step);
     };
@@ -598,6 +759,8 @@
       legend.append(li);
     }
     box.append(legend);
+    // Callouts need the chart's on-screen size, so draw them once it's in the page.
+    requestAnimationFrame(drawCallouts);
     return box;
   }
 
