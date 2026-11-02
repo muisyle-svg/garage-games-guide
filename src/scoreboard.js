@@ -1010,7 +1010,7 @@
   const DOT_PX = { wide: 52, narrow: 30 }, BADGE_PX = { wide: 14, narrow: 9 };
   // Special encores after a run, by player name.
   const ENCORES = { melindaalvey: { bubble: 'Sort & Sweet', effect: 'candy', ms: 5000, count: 110 } };
-  const ENCORE_PAUSE_MS = 600;
+  const ENCORE_PAUSE_MS = 600, ENCORE_WALK_MS = 2600, FLAME_MS = 1800, STOMPS = 5, ENCORE_SEAT_DEG = -35;
   let courseSeat = 30;             // how far outside a bubble's rim players wait, in map units       // run time to walk one map pixel (about 4 s across the garage)
 
   function buildCourseRun(data, slot, index, entry) {
@@ -1054,18 +1054,21 @@
       if (to && to !== at) {
         const key = `${entry.key}|encore|${courseSeat}`;
         if (!coursePaths.has(key)) {
-          const a = onRim(at, seatDeg, COURSE.radius + courseSeat + 8), b = onRim(to, seatDeg, COURSE.radius + courseSeat + 8);
-          coursePaths.set(key, [seat(at), ...planPath(a, b, key), seat(to)]);
+          // Stand on the open, upper-right side of the bubble so the show has room.
+          const a = onRim(at, seatDeg, COURSE.radius + courseSeat + 8), b = onRim(to, ENCORE_SEAT_DEG, COURSE.radius + courseSeat + 8);
+          coursePaths.set(key, [seat(at), ...planPath(a, b, key), onRim(to, ENCORE_SEAT_DEG, COURSE.radius + courseSeat)]);
         }
         const path = coursePaths.get(key);
         const lengths = [0];
         for (let k = 1; k < path.length; k++) lengths.push(lengths[k - 1] + Math.hypot(path[k].x - path[k - 1].x, path[k].y - path[k - 1].y));
         const total = lengths[lengths.length - 1];
         const depart = arrive;
-        arrive = depart + total * WALK_MS_PER_PX;
+        arrive = depart + ENCORE_WALK_MS;
         segments.push({ from: at, to, depart, arrive, path, lengths, total, encore: true });
       }
-      if (to) encore = { ...special, bubble: to, start: arrive + ENCORE_PAUSE_MS, end: arrive + ENCORE_PAUSE_MS + special.ms };
+      // Turn red and angry on the walk over, burst into flames on arrival, then the candy.
+      if (to) encore = { ...special, bubble: to, walkFrom: tl.endMs + ENCORE_PAUSE_MS, walkTo: arrive, flameAt: arrive,
+        start: arrive + FLAME_MS, end: arrive + FLAME_MS + special.ms };
     }
     return { slot, index, entry, tl, startBubble, segments, seat, encore, endMs: encore ? encore.end : tl.endMs };
   }
@@ -1132,16 +1135,27 @@
       if (t < s.depart) return { ...pr.seat(here), bubble: here, moving: false };
       if (t < s.arrive) {
         const f = s.arrive > s.depart ? (t - s.depart) / (s.arrive - s.depart) : 1;
-        const eased = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+        let eased = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+        // An encore walk is a stomp: a few heavy steps, each a lift, a lurch forward and a slam.
+        let hop = 0, slam = 0;
+        if (s.encore) {
+          const n = Math.min(STOMPS - 1e-9, f * STOMPS), k = Math.floor(n), u = n - k;
+          const move = Math.min(1, u / 0.55);
+          eased = (k + (1 - Math.pow(1 - move, 3))) / STOMPS;
+          hop = u < 0.55 ? Math.sin(Math.PI * u / 0.55) : 0;
+          slam = u >= 0.55 ? Math.max(0, 1 - (u - 0.55) / 0.3) : 0;
+        }
         const d = eased * s.total;
         let k = 1;
         while (k < s.lengths.length - 1 && s.lengths[k] < d) k++;
         const a = s.path[k - 1], b = s.path[k], seg = (s.lengths[k] - s.lengths[k - 1]) || 1;
         const u = Math.min(1, Math.max(0, (d - s.lengths[k - 1]) / seg));
-        return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, bubble: null, moving: true, seg: s, dist: d };
+        return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, bubble: null, moving: true, seg: s, dist: d, hop, slam };
       }
       here = s.to;
     }
+    const last = pr.segments[pr.segments.length - 1];
+    if (last?.encore) return { ...last.path[last.path.length - 1], bubble: here, moving: false };
     return { ...pr.seat(here), bubble: here, moving: false };
   }
 
@@ -1167,6 +1181,36 @@
     }
     return t >= pr.tl.endMs ? 'missed' : null;
   }
+
+  // An angry face drawn in a unit circle, swapped in for the player's initial.
+  function angryFace() {
+    const g = svgEl('g', { class: 'sb-angry', opacity: 0 });
+    const line = (d, w) => svgEl('path', { d, stroke: '#fff', 'stroke-width': w, 'stroke-linecap': 'round', fill: 'none' });
+    g.append(
+      line('M-0.6,-0.5 L-0.12,-0.25', 0.13), line('M0.6,-0.5 L0.12,-0.25', 0.13),
+      svgEl('circle', { cx: -0.3, cy: -0.05, r: 0.11, fill: '#fff' }), svgEl('circle', { cx: 0.3, cy: -0.05, r: 0.11, fill: '#fff' }),
+      line('M-0.38,0.5 Q0,0.2 0.38,0.5', 0.13));
+    return g;
+  }
+
+  // Flames all around a dot: red, orange and yellow tongues that flicker.
+  const FLAME_PATH = 'M0,-1 C0.15,-0.6 0.42,-0.4 0.36,-0.08 C0.3,0.2 -0.3,0.2 -0.36,-0.08 C-0.42,-0.4 -0.15,-0.6 0,-1 Z';
+  function flameGroup(seed) {
+    const rnd = seededRandom(`${seed}|flames`);
+    const g = svgEl('g', { class: 'sb-flames', opacity: 0 });
+    const tongues = [];
+    for (const [color, layer] of [['#e8290b', 1], ['#ff8a00', 0.72], ['#ffd400', 0.45]]) {
+      for (let n = 0; n < 12; n++) {
+        const node = svgEl('path', { d: FLAME_PATH, fill: color });
+        g.append(node);
+        tongues.push({ node, layer, angle: (n / 12) * Math.PI * 2 + rnd() * 0.3, phase: rnd() * Math.PI * 2, rate: 0.012 + rnd() * 0.01 });
+      }
+    }
+    return { g, tongues };
+  }
+  const mixColor = (a, b, f) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * f)).join(',')})`;
+  const parseRgb = c => (String(c).match(/\d+(\.\d+)?/g) || [0, 0, 0]).slice(0, 3).map(Number);
+  const ANGRY_RED = [255, 24, 24];
 
   function renderCourse(data, slots) {
     cancelAnimationFrame(courseTimer);
@@ -1201,10 +1245,10 @@
     // second on screen (longer walks a little longer). Time spent at events still plays at
     // the chosen speed.
     const walks = runs.flatMap(r => r.segments)
-      .filter(s => s.arrive > s.depart)
+      .filter(s => s.arrive > s.depart && !s.encore)
       .map(s => ({ from: s.depart, to: s.arrive, realMs: Math.max(500, Math.min(1000, s.total * 2.4)) }))
       // Encores play in real time whatever the speed: a beat before, then the burst.
-      .concat(runs.filter(r => r.encore).map(r => ({ from: r.encore.start - ENCORE_PAUSE_MS, to: r.encore.end, realMs: r.encore.end - r.encore.start + ENCORE_PAUSE_MS })));
+      .concat(runs.filter(r => r.encore).map(r => ({ from: r.tl.endMs, to: r.encore.end, realMs: r.encore.end - r.tl.endMs })));
     const cuts = [...new Set([0, endMs, ...walks.flatMap(w => [w.from, w.to])])].sort((a, b) => a - b);
     const spans = [];
     for (let i = 0; i < cuts.length - 1; i++) {
@@ -1292,7 +1336,14 @@
       tag.textContent = tagFor(r, i);
       g.append(dot, initial, tag);
       playerG.append(g);
-      return { g, dot, initial, tag };
+      let face = null, flames = null;
+      if (r.encore) {
+        face = angryFace();
+        g.insertBefore(face, tag);
+        flames = flameGroup(r.entry.key);
+        g.insertBefore(flames.g, dot);
+      }
+      return { g, dot, initial, tag, face, flames };
     });
     const trails = runs.map(r => {
       const pl = svgEl('polyline', { class: `sb-course-trail sb-slot-${r.slot + 1}` });
@@ -1316,7 +1367,7 @@
         }
         const spread = (i - (runs.length - 1) / 2) * 40;
         const float = (id, t0, at, big, small) => {
-          if (t < t0 || t >= t0 + hold) return;
+          if (t < t0 || t >= t0 + hold || (r.encore && t >= r.tl.endMs)) return;
           floats.push({ id: `${r.entry.key}|${id}`, r, x: at.x, y: at.y, big, small, age: (t - t0) / hold });
         };
         for (const e of r.tl.events) {
@@ -1367,6 +1418,42 @@
         d.dot.style.strokeWidth = px(compactMap ? 3 : 4);
         d.initial.setAttribute('x', p.x); d.initial.setAttribute('y', p.y + px(dotR * 0.38));
         d.initial.style.fontSize = `${px(dotR * 1.1)}px`;
+        const e = r.encore;
+        // Stomping: lift and lurch, then land squashed with a jolt through the map.
+        const hop = p.hop || 0, slam = p.slam || 0;
+        d.g.setAttribute('transform', hop || slam
+          ? `translate(${p.x} ${p.y - hop * px(dotR * 0.7)}) scale(${1 + 0.28 * slam - 0.08 * hop} ${1 - 0.22 * slam + 0.1 * hop}) translate(${-p.x} ${-p.y})`
+          : '');
+        if (e) {
+          frame.style.transform = slam > 0.2 ? `translate(${(slam * 3 * (Math.floor(t / 40) % 2 ? 1 : -1)).toFixed(1)}px, ${(slam * 4).toFixed(1)}px)` : '';
+          const walk = Math.max(0, Math.min(1, (t - e.walkFrom) / (e.walkTo - e.walkFrom)));
+          const red = Math.min(1, walk / 0.6);
+          if (red > 0) {
+            d.baseRgb = d.baseRgb || parseRgb(getComputedStyle(d.dot).fill);
+            d.dot.style.fill = mixColor(d.baseRgb, ANGRY_RED, red);
+          } else d.dot.style.fill = '';
+          const mad = Math.max(0, Math.min(1, (walk - 0.45) / 0.3));
+          d.initial.style.opacity = String(1 - mad);
+          d.face.setAttribute('opacity', mad);
+          d.face.setAttribute('transform', `translate(${p.x} ${p.y}) scale(${px(dotR * 0.85)})`);
+          // Flames grow in on arrival, roar, then die down as the candy flies out.
+          const fl = t < e.flameAt ? 0 : t < e.start ? Math.min(1, (t - e.flameAt) / (FLAME_MS * 0.4))
+            : Math.max(0, 1 - (t - e.start) / (e.ms * 0.25));
+          d.flames.g.setAttribute('opacity', fl > 0 ? 1 : 0);
+          d.tag.style.opacity = String(1 - fl);
+          if (fl > 0) {
+            for (const f of d.flames.tongues) {
+              const up = -Math.sin(f.angle);             // 1 at the top of the dot, -1 at the bottom
+              const flicker = 0.75 + 0.25 * Math.sin(t * f.rate + f.phase) + 0.1 * Math.sin(t * f.rate * 2.7 + f.phase * 3);
+              const h = px(dotR) * (0.9 + 0.7 * (up + 1) / 2) * flicker * f.layer * (0.4 + 0.6 * fl) * 2.3;
+              const bx = p.x + Math.cos(f.angle) * px(dotR) * 0.7, by = p.y + Math.sin(f.angle) * px(dotR) * 0.7;
+              // Tongues lean outward from the dot but always rise.
+              const lean = Math.cos(f.angle) * 35 + Math.sin(t * f.rate * 0.8 + f.phase) * 8;
+              f.node.setAttribute('transform', `translate(${bx.toFixed(1)} ${by.toFixed(1)}) rotate(${lean.toFixed(1)}) scale(${(h * 0.75).toFixed(2)} ${h.toFixed(2)})`);
+              f.node.setAttribute('opacity', (0.9 * Math.min(1, fl * 1.5)).toFixed(2));
+            }
+          }
+        }
         // The name sits outward from the bubble, so players sharing a bubble don't overlap,
         // and is kept inside the map.
         const deg = SEAT_ANGLES[i % SEAT_ANGLES.length] * Math.PI / 180;
