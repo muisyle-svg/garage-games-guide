@@ -222,7 +222,7 @@
   // Where a player sits on a bubble (on its rim, along the top, one spot per player) and
   // where their finished/unfinished badge goes (along the bottom rim).
   const SEAT_ANGLES = [-160, -115, -65, -20];
-  const BADGE_ANGLES = [135, 105, 75, 45];
+  const BADGE_ANGLES = [150, 110, 70, 30];
   const onRim = (b, deg, r = COURSE.radius) => ({ x: b.x + r * Math.cos(deg * Math.PI / 180), y: b.y + r * Math.sin(deg * Math.PI / 180) });
 
   // Is every point of a path clear of every bubble (with a margin)?
@@ -241,9 +241,9 @@
   const lineClear = (a, b, margin) => pathClear(lerpPts(a, b), margin);
 
   // A walking route between two points that never crosses a bubble: a grid search around the
-  // bubbles (with a little random cost so routes vary), pulled tight, then smoothed into a
-  // curve with a gentle random wave. Each step falls back to a plainer route if the fancier
-  // one would clip a bubble.
+  // bubbles (with a little random cost so routes vary), pulled tight to at most three straight
+  // legs, then smoothed into a gentle curve. Falls back to the straight legs if a curve would
+  // clip a bubble.
   function planPath(from, to, seed) {
     const rand = seededRandom(seed);
     const CELL = 10, N = Math.ceil(COURSE.size / CELL);
@@ -308,13 +308,14 @@
         if (cost < g[ni]) { g[ni] = cost; came[ni] = cur; push(cost + h(ni), ni); }
       }
     }
-    let route;
+    let route, cellsForTrim = null;
     if (came[goal] === -1 && start !== goal) route = [from, to];
     else {
       const cells = [];
       for (let i = goal; i !== -1; i = came[i]) cells.push({ x: (i % N) * CELL + CELL / 2, y: Math.floor(i / N) * CELL + CELL / 2 });
       cells.reverse();
       cells[0] = from; cells[cells.length - 1] = to;
+      cellsForTrim = cells;
       // Pull the route tight: from each point, jump to the furthest one in plain sight.
       route = [cells[0]];
       let i = 0;
@@ -325,48 +326,57 @@
         i = j;
       }
     }
-    const safe = route.flatMap((p, k) => (k ? lerpPts(route[k - 1], p).slice(1) : [p]));
-    // Bend each straight leg through a randomly nudged midpoint, then smooth and add a wave.
-    const curvy = amp => {
-      const pts = [route[0]];
-      for (let k = 1; k < route.length; k++) {
-        const a = route[k - 1], b = route[k];
-        const len = Math.hypot(b.x - a.x, b.y - a.y);
-        if (len > 60) {
-          const nx = -(b.y - a.y) / len, ny = (b.x - a.x) / len, off = (rand() * 2 - 1) * Math.min(40, len * 0.18) * amp;
-          pts.push({ x: (a.x + b.x) / 2 + nx * off, y: (a.y + b.y) / 2 + ny * off });
+    // At most two turning points (three legs): if the tightened route needs more, look for
+    // two of its grid points that still connect in three clear straight legs.
+    if (route.length > 4 && cellsForTrim) {
+      const c = cellsForTrim, step = Math.max(1, Math.floor(c.length / 24));
+      let best = null;
+      for (let i = step; i < c.length - 1 && !best; i += step) {
+        if (!lineClear(from, c[i], 4)) continue;
+        for (let j = c.length - 1 - step; j > i; j -= step) {
+          if (lineClear(c[i], c[j], 4) && lineClear(c[j], to, 4)) { best = [from, c[i], c[j], to]; break; }
         }
-        pts.push(b);
       }
-      // Catmull-Rom through the points, sampled every few pixels.
+      if (best) route = best;
+    }
+    const safe = route.flatMap((p, k) => (k ? lerpPts(route[k - 1], p).slice(1) : [p]));
+    // Smooth the legs into gentle curves: a single leg gets one random bow; two or three legs
+    // become one flowing curve through their turning points. No wiggles.
+    const smooth = amp => {
+      let pts = route;
+      if (route.length === 2) {
+        const [a, b] = route;
+        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        const off = (rand() < 0.5 ? -1 : 1) * (0.08 + rand() * 0.14) * len * amp;
+        pts = [a, { x: (a.x + b.x) / 2 - (b.y - a.y) / len * off, y: (a.y + b.y) / 2 + (b.x - a.x) / len * off }, b];
+        // A quadratic curve through the bowed midpoint.
+        const out = [];
+        const n = Math.max(8, Math.ceil(len / 4));
+        const cx = 2 * pts[1].x - (a.x + b.x) / 2, cy = 2 * pts[1].y - (a.y + b.y) / 2;
+        for (let i = 0; i <= n; i++) {
+          const t = i / n, u = 1 - t;
+          out.push({ x: u * u * a.x + 2 * u * t * cx + t * t * b.x, y: u * u * a.y + 2 * u * t * cy + t * t * b.y });
+        }
+        return out;
+      }
+      // Catmull-Rom through the turning points, with the tangents eased by amp.
       const out = [];
       for (let k = 0; k < pts.length - 1; k++) {
         const p0 = pts[Math.max(0, k - 1)], p1 = pts[k], p2 = pts[k + 1], p3 = pts[Math.min(pts.length - 1, k + 2)];
-        const n = Math.max(2, Math.ceil(Math.hypot(p2.x - p1.x, p2.y - p1.y) / 4));
-        for (let s = 0; s < n; s++) {
-          const t = s / n, t2 = t * t, t3 = t2 * t;
-          out.push({
-            x: 0.5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
-            y: 0.5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3),
-          });
+        const t1 = { x: (p2.x - p0.x) * 0.5 * amp, y: (p2.y - p0.y) * 0.5 * amp };
+        const t2 = { x: (p3.x - p1.x) * 0.5 * amp, y: (p3.y - p1.y) * 0.5 * amp };
+        const n = Math.max(4, Math.ceil(Math.hypot(p2.x - p1.x, p2.y - p1.y) / 4));
+        for (let i = 0; i < n; i++) {
+          const t = i / n, t2s = t * t, t3 = t2s * t;
+          const h1 = 2 * t3 - 3 * t2s + 1, h2 = -2 * t3 + 3 * t2s, h3 = t3 - 2 * t2s + t, h4 = t3 - t2s;
+          out.push({ x: h1 * p1.x + h2 * p2.x + h3 * t1.x + h4 * t2.x, y: h1 * p1.y + h2 * p2.y + h3 * t1.y + h4 * t2.y });
         }
       }
       out.push(pts[pts.length - 1]);
-      // A wave across the direction of travel, fading in and out at the ends.
-      const waveAmp = (2 + rand() * 5) * amp, waveLen = 45 + rand() * 50, phase = rand() * Math.PI * 2;
-      let dist = 0;
-      const total = out.reduce((s, p, k) => s + (k ? Math.hypot(p.x - out[k - 1].x, p.y - out[k - 1].y) : 0), 0);
-      return out.map((p, k) => {
-        if (k) dist += Math.hypot(p.x - out[k - 1].x, p.y - out[k - 1].y);
-        const a = out[Math.max(0, k - 1)], b = out[Math.min(out.length - 1, k + 1)];
-        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-        const fade = Math.min(1, dist / 30, (total - dist) / 30);
-        const w = Math.sin((dist / waveLen) * Math.PI * 2 + phase) * waveAmp * Math.max(0, fade);
-        return { x: p.x - (b.y - a.y) / len * w, y: p.y + (b.x - a.x) / len * w };
-      });
+      return out;
     };
-    for (const amp of [1, 0.5, 0.2]) {
-      const pts = curvy(amp);
+    for (const amp of [1, 0.6, 0.3]) {
+      const pts = smooth(amp);
       if (pathClear(pts.slice(1, -1), 2)) return pts;
     }
     return safe;
@@ -995,20 +1005,24 @@
   const course = { t: 0, playing: false, speed: 10, trails: false };
   let courseTimer = 0;
   const coursePaths = new Map();   // "runId|segment" -> route, so routes stay put on redraw
-  const WALK_MS_PER_PX = 12;       // run time to walk one map pixel (about 4 s across the garage)
+  const WALK_MS_PER_PX = 12;
+  // On-screen sizes (pixels) of the player dots and the finished/unfinished badges.
+  const DOT_PX = { wide: 52, narrow: 30 }, BADGE_PX = { wide: 14, narrow: 9 };
+  let courseSeat = 30;             // how far outside a bubble's rim players wait, in map units       // run time to walk one map pixel (about 4 s across the garage)
 
   function buildCourseRun(data, slot, index, entry) {
     const tl = courseTimeline(data, entry.run);
     const startBubble = COURSE.bubbles.find(b => b.key === nameKey(COURSE.start)) || COURSE.bubbles[0];
     const seatDeg = SEAT_ANGLES[index % SEAT_ANGLES.length];
-    const seat = b => onRim(b, seatDeg, COURSE.radius + 2);
+    // Players wait just outside the bubble's rim, so their big dots don't cover the name.
+    const seat = b => onRim(b, seatDeg, COURSE.radius + courseSeat);
     const segments = [];
     let at = startBubble, prevT = 0;
     tl.visits.forEach((v, i) => {
       if (v.bubble !== at) {
-        const key = `${entry.key}|${i}`;
+        const key = `${entry.key}|${i}|${courseSeat}`;
         if (!coursePaths.has(key)) {
-          const a = onRim(at, seatDeg, COURSE.radius + 16), b = onRim(v.bubble, seatDeg, COURSE.radius + 16);
+          const a = onRim(at, seatDeg, COURSE.radius + courseSeat + 8), b = onRim(v.bubble, seatDeg, COURSE.radius + courseSeat + 8);
           coursePaths.set(key, [seat(at), ...planPath(a, b, key), seat(v.bubble)]);
         }
         const path = coursePaths.get(key);
@@ -1087,8 +1101,12 @@
     controls.append(speed, playBtn);
     head.append(controls);
     box.append(head);
-    box.append(el('p', 'sb-help', 'Each run played on the course map, sped up, so longer stops show which events took a while. Everyone starts at Paddle Peril.'));
+    box.append(el('p', 'sb-help', 'Each run played on the course map. Time at events is sped up, so longer stops show which events took a while; walks between events play at an easy-to-follow pace. Everyone starts at Paddle Peril.'));
 
+    // Players wait just outside the rim, far enough out that their dots clear the bubble.
+    const mapWidth = Math.max(200, (compareEl.clientWidth || COURSE.size) - 30);
+    const narrow = mapWidth < 520;
+    courseSeat = Math.round((narrow ? DOT_PX.narrow : DOT_PX.wide) / 2 / (Math.min(mapWidth, 900) / COURSE.size)) + 2;
     const runs = slots.map(({ slot, entry }, i) => buildCourseRun(data, slot, i, entry));
     const firstNames = runs.map(r => r.entry.name.split(/\s+/)[0]);
     const tagFor = (r, i) => firstNames.filter(n => n === firstNames[i]).length > 1
@@ -1096,6 +1114,28 @@
       : firstNames[i];
     const endMs = Math.max(...runs.map(r => r.tl.endMs));
     course.t = Math.min(course.t, endMs);
+
+    // Walking between events is played at a steady pace whatever the speed setting: while
+    // anyone is on the move, playback slows so each walk takes about half a second to a
+    // second on screen (longer walks a little longer). Time spent at events still plays at
+    // the chosen speed.
+    const walks = runs.flatMap(r => r.segments)
+      .filter(s => s.arrive > s.depart)
+      .map(s => ({ from: s.depart, to: s.arrive, realMs: Math.max(500, Math.min(1000, s.total * 2.4)) }));
+    const cuts = [...new Set([0, endMs, ...walks.flatMap(w => [w.from, w.to])])].sort((a, b) => a - b);
+    const spans = [];
+    for (let i = 0; i < cuts.length - 1; i++) {
+      const a = cuts[i], b = cuts[i + 1];
+      // The slowest any walk in this stretch needs (run ms per screen ms).
+      let need = Infinity;
+      for (const w of walks) if (w.from <= a && w.to >= b) need = Math.min(need, (w.to - w.from) / w.realMs);
+      spans.push({ a, b, need });
+    }
+    const rateAt = t => {
+      let lo = 0, hi = spans.length - 1;
+      while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (spans[mid].a <= t) lo = mid; else hi = mid - 1; }
+      return Math.max(0.5, Math.min(course.speed, spans[lo]?.need ?? course.speed));
+    };
 
     const frame = el('div', 'sb-course-frame');
     const img = el('img');
@@ -1145,6 +1185,8 @@
 
     function badgeShape(state, r) {
       const g = svgEl('g', { class: `sb-badge-${state}` });
+      g.style.setProperty('--badge-stroke', `${r * 0.2}px`);
+      g.style.setProperty('--badge-mark', `${r * 0.27}px`);
       g.append(svgEl('circle', { r, class: 'sb-badge-ring' }));
       const s = r * 0.5;
       if (state === 'done') g.append(svgEl('path', { d: `M${-s},0 L${-s * 0.25},${s * 0.75} L${s},${-s * 0.7}`, class: 'sb-badge-mark' }));
@@ -1156,14 +1198,17 @@
 
     const badgeEls = new Map();
     const popupEls = new Map();
+    const floatEls = new Map();
     const dots = runs.map((r, i) => {
       const g = svgEl('g', { class: `sb-course-player sb-slot-${r.slot + 1}` });
       const dot = svgEl('circle', { class: 'sb-course-dot' });
+      const initial = svgEl('text', { class: 'sb-course-initial', 'text-anchor': 'middle' });
+      initial.textContent = (r.entry.name.trim()[0] || '?').toUpperCase();
       const tag = svgEl('text', { class: 'sb-course-tag', 'text-anchor': 'middle' });
       tag.textContent = tagFor(r, i);
-      g.append(dot, tag);
+      g.append(dot, initial, tag);
       playerG.append(g);
-      return { g, dot, tag };
+      return { g, dot, initial, tag };
     });
     const trails = runs.map(r => {
       const pl = svgEl('polyline', { class: `sb-course-trail sb-slot-${r.slot + 1}` });
@@ -1171,37 +1216,36 @@
       return pl;
     });
 
+    // What pops up at time t. Results float up from the event as big "+45 / 12s" text in
+    // the player's color and fade; once a run is over, only its final score shows.
+    const shortTime = ms => (ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))}s` : formatClock(ms));
     function popupsAt(t) {
-      const hold = 2200 * course.speed;
-      const out = [];
-      for (const r of runs) {
-        const who = runs.length > 1 ? ` · ${r.entry.name.split(/\s+/)[0]}` : '';
+      const hold = 1600 * course.speed;
+      const cards = [], floats = [];
+      runs.forEach((r, i) => {
+        const doneAt = Math.min(r.tl.endMs + 1200 * course.speed, endMs);
+        if (t >= doneAt) {
+          const done = r.tl.events.filter(e => e.finish !== null).length;
+          cards.push({ id: `${r.entry.key}|end`, r, title: `${runs.length > 1 ? `${tagFor(r, i)}: ` : ''}${r.entry.run.totalPoints ?? ''} pts`,
+            meta: `${done} of ${r.tl.events.length} events finished` });
+          return;
+        }
+        const spread = (i - (runs.length - 1) / 2) * 40;
+        const float = (id, t0, at, big, small) => {
+          if (t < t0 || t >= t0 + hold) return;
+          floats.push({ id: `${r.entry.key}|${id}`, r, x: at.x, y: at.y, big, small, age: (t - t0) / hold });
+        };
         for (const e of r.tl.events) {
-          if (e.finish !== null && t >= e.finish && t < e.finish + hold) {
-            const g = guideEvents.find(x => nameKey(x.name) === nameKey(e.name));
-            const share = Number.isFinite(g?.points) && g.points > 0 ? ` (${pct(e.points / g.points)})` : '';
-            out.push({ id: `${r.entry.key}|${e.eventId}|f`, r, anchor: e.bubble, title: `${e.name} ✓`, short: `${e.points}${share}`,
-              meta: `${e.points} pts${share}${e.durationMs !== null ? ` in ${formatClock(e.durationMs)}` : ''}${who}`, fade: t > e.finish + hold * 0.75 });
-          }
-          if (e.leftAt !== null && t >= e.leftAt && t < e.leftAt + hold) {
-            out.push({ id: `${r.entry.key}|${e.eventId}|l`, r, anchor: e.bubble, title: `${e.name}: left unfinished`, short: '',
-              meta: `after ${formatClock(e.leftAt - e.start)}${who}`, fade: t > e.leftAt + hold * 0.75 });
-          }
+          const over = { x: e.bubble.x + spread, y: e.bubble.y - COURSE.radius * 0.2 };
+          if (e.finish !== null) float(`${e.eventId}|f`, e.finish, over, `+${e.points}`, e.durationMs !== null ? shortTime(e.durationMs) : '');
+          if (e.leftAt !== null) float(`${e.eventId}|l`, e.leftAt, over, 'left', shortTime(e.leftAt - e.start));
         }
         const bonus = r.tl.bonus?.result;
-        if (bonus && Number.isFinite(bonus.startElapsedMs) && t >= bonus.startElapsedMs && t < (bonus.status === 'completed' && Number.isFinite(bonus.finishElapsedMs) ? bonus.finishElapsedMs : r.tl.endMs)) {
-          out.push({ id: `${r.entry.key}|bonus|s`, r, anchor: null, title: r.tl.bonus.name, short: '', meta: `Bonus round${who}`, fade: false });
+        if (bonus?.status === 'completed' && Number.isFinite(bonus.finishElapsedMs)) {
+          float('bonus', bonus.finishElapsedMs, positionAt(r, bonus.finishElapsedMs), `+${bonus.points}`, 'bonus');
         }
-        if (bonus?.status === 'completed' && Number.isFinite(bonus.finishElapsedMs) && t >= bonus.finishElapsedMs && t < bonus.finishElapsedMs + hold) {
-          out.push({ id: `${r.entry.key}|bonus|f`, r, anchor: null, title: `${r.tl.bonus.name} ✓`, short: `+${bonus.points}`, meta: `+${bonus.points} pts${who}`, fade: t > bonus.finishElapsedMs + hold * 0.75 });
-        }
-        if (t >= r.tl.endMs && t < r.tl.endMs + hold * 1.5) {
-          const done = r.tl.events.filter(e => e.finish !== null).length;
-          out.push({ id: `${r.entry.key}|end`, r, anchor: null, title: `Run over: ${r.entry.run.totalPoints ?? ''} pts`, short: '',
-            meta: `${done} of ${r.tl.events.length} events finished${who}`, fade: false });
-        }
-      }
-      return out;
+      });
+      return { cards, floats };
     }
 
     function draw() {
@@ -1209,6 +1253,7 @@
       const rect = frame.getBoundingClientRect();
       k = (rect.width || COURSE.size) / COURSE.size;
       const positions = runs.map(r => positionAt(r, t));
+      const compactMap = (rect.width || COURSE.size) < 520;
 
       // Badges along the bottom rim of each bubble, one spot per player.
       runs.forEach((r, i) => {
@@ -1220,34 +1265,39 @@
           cur?.node.remove();
           badgeEls.delete(id);
           if (!state) continue;
-          const p = onRim(e.bubble, BADGE_ANGLES[i % BADGE_ANGLES.length], COURSE.radius + 1);
+          // Badges straddle the lower rim, sitting mostly outside so the event name stays readable.
+          const p = onRim(e.bubble, BADGE_ANGLES[i % BADGE_ANGLES.length], COURSE.radius + px(compactMap ? BADGE_PX.narrow : BADGE_PX.wide) * 0.6);
           const node = svgEl('g', { class: `sb-slot-${r.slot + 1}`, transform: `translate(${p.x} ${p.y})` });
-          node.append(badgeShape(state, px(7)));
+          node.append(badgeShape(state, px(compactMap ? BADGE_PX.narrow : BADGE_PX.wide)));
           badgeG.append(node);
           badgeEls.set(id, { state, node });
         }
       });
 
-      // Players, with their name above the dot.
+      // Players: a big dot with their initial, and their name beside it.
       runs.forEach((r, i) => {
         const p = positions[i];
         const d = dots[i];
-        d.dot.setAttribute('cx', p.x); d.dot.setAttribute('cy', p.y); d.dot.setAttribute('r', px(6));
-        d.dot.style.strokeWidth = px(2);
+        d.dot.setAttribute('cx', p.x); d.dot.setAttribute('cy', p.y); const dotR = (compactMap ? DOT_PX.narrow : DOT_PX.wide) / 2;
+        d.dot.setAttribute('r', px(dotR));
+        d.dot.style.strokeWidth = px(compactMap ? 3 : 4);
+        d.initial.setAttribute('x', p.x); d.initial.setAttribute('y', p.y + px(dotR * 0.38));
+        d.initial.style.fontSize = `${px(dotR * 1.1)}px`;
         // The name sits outward from the bubble, so players sharing a bubble don't overlap,
         // and is kept inside the map.
         const deg = SEAT_ANGLES[i % SEAT_ANGLES.length] * Math.PI / 180;
         const ux = p.moving ? 0 : Math.cos(deg), uy = p.moving ? -1 : Math.sin(deg);
         const anchor = ux < -0.3 ? 'end' : ux > 0.3 ? 'start' : 'middle';
-        const width = px(d.tag.textContent.length * 6.6);
-        let tx = p.x + ux * px(10), ty = p.y + uy * px(10) + (uy > -0.5 ? px(4) : 0);
+        const width = px(d.tag.textContent.length * (compactMap ? 7.2 : 9.6));
+        const gap = dotR + 6;
+        let tx = p.x + ux * px(gap), ty = p.y + uy * px(gap) + (uy > -0.5 ? px(5) : 0);
         const left = anchor === 'end' ? tx - width : anchor === 'middle' ? tx - width / 2 : tx;
         if (left < 4) tx += 4 - left;
         if (left + width > COURSE.size - 4) tx -= left + width - (COURSE.size - 4);
         d.tag.setAttribute('text-anchor', anchor);
         d.tag.setAttribute('x', tx); d.tag.setAttribute('y', ty);
-        d.tag.style.fontSize = `${px(11)}px`;
-        d.tag.style.strokeWidth = `${px(3)}px`;
+        d.tag.style.fontSize = `${px(compactMap ? 12 : 16)}px`;
+        d.tag.style.strokeWidth = `${px(4)}px`;
       });
 
       // Trails.
@@ -1259,11 +1309,48 @@
       });
 
       // Popups beside the event (or the player), placed so they don't cover each other.
-      const wanted = popupsAt(t);
+      const { cards: wanted, floats } = popupsAt(t);
+
+      // Floating results: rise and fade, with no box around them.
+      const keepFloat = new Set(floats.map(f => f.id));
+      for (const [id, node] of floatEls) if (!keepFloat.has(id)) { node.remove(); floatEls.delete(id); }
+      const floatBoxes = [];
+      for (const f of floats) {
+        let n = floatEls.get(f.id);
+        if (!n) {
+          n = el('div', `sb-float sb-slot-${f.r.slot + 1}${compactMap ? ' sb-float-small' : ''}`);
+          n.append(el('span', 'sb-float-big', f.big));
+          if (f.small) n.append(el('span', 'sb-float-sub', f.small));
+          layer.append(n);
+          floatEls.set(f.id, n);
+        }
+        const rise = f.age * (compactMap ? 22 : 40);
+        const scale = f.age < 0.08 ? 0.6 + f.age * 5 : 1;
+        // Kept inside the map, and stacked upward if another result is already there.
+        const fw = n.offsetWidth, fh = n.offsetHeight;
+        const FW = rect.width || COURSE.size;
+        const FH = rect.height || COURSE.size;
+        const baseX = f.x * k, baseY = f.y * k - rise;
+        const fits = (x, y) => x - fw / 2 >= 0 && x + fw / 2 <= FW && y - fh >= 0 && y <= FH &&
+          !floatBoxes.some(o => x - fw / 2 < o.right && x + fw / 2 > o.left && y - fh < o.bottom && y > o.top);
+        let cx = Math.max(fw / 2 + 2, Math.min(FW - fw / 2 - 2, baseX)), bottom = Math.max(fh + 2, baseY);
+        for (const [dx, dy] of [[0, 0], [0, -1], [1, 0], [-1, 0], [0, 1], [1, 1], [-1, 1], [2, 0], [-2, 0], [0, 2]]) {
+          const x = Math.max(fw / 2 + 2, Math.min(FW - fw / 2 - 2, baseX + dx * (fw + 4)));
+          const y = Math.max(fh + 2, baseY + dy * (fh + 2));
+          if (fits(x, y)) { cx = x; bottom = y; break; }
+        }
+        floatBoxes.push({ left: cx - fw / 2, right: cx + fw / 2, top: bottom - fh, bottom });
+        n.style.left = `${cx}px`;
+        n.style.top = `${bottom}px`;
+        n.style.opacity = String(f.age < 0.6 ? 1 : Math.max(0, 1 - (f.age - 0.6) / 0.4));
+        n.style.transform = `translate(-50%, -100%) scale(${scale})`;
+      }
       const W0 = rect.width || COURSE.size;
       const keep = new Set(wanted.map(w => `${w.id}|${W0 < 520 ? 'c' : 'f'}`));
       for (const [id, node] of popupEls) if (!keep.has(id)) { node.remove(); popupEls.delete(id); }
-      const placed = [];
+      // Popups steer clear of the player dots as well as each other.
+      const dotHalf = (compactMap ? DOT_PX.narrow : DOT_PX.wide) / 2;
+      const placed = positions.map(p => ({ left: p.x * k - dotHalf, top: p.y * k - dotHalf, right: p.x * k + dotHalf, bottom: p.y * k + dotHalf }));
       const W = rect.width || COURSE.size, H = rect.height || COURSE.size;
       // On a phone the popups shrink to one short line so they don't bury the map.
       const compact = W < 520;
@@ -1281,7 +1368,7 @@
         c.classList.toggle('sb-callout-fade', !!w.fade);
         const cw = c.offsetWidth, ch = c.offsetHeight;
         const anchor = w.anchor || positions[runs.indexOf(w.r)];
-        const ax = anchor.x * k, ay = anchor.y * k, gap = (w.anchor ? COURSE.radius + 6 : 12) * k;
+        const ax = anchor.x * k, ay = anchor.y * k, gap = w.anchor ? (COURSE.radius + 6) * k : (compactMap ? DOT_PX.narrow : DOT_PX.wide) / 2 + 6;
         let spot = null;
         for (let off = 0; off < 12 && !spot; off++) {
           for (const [dx, dy] of [[0, -1], [0, 1], [1, 0], [-1, 0]]) {
@@ -1313,7 +1400,13 @@
       if (!box.isConnected) { course.playing = false; return; }
       const dt = lastFrame ? now - lastFrame : 0;
       lastFrame = now;
-      course.t = Math.min(endMs, course.t + dt * course.speed);
+      // Advance in small steps so the pace changes right where a walk starts or ends.
+      let left = Math.min(dt, 100);
+      while (left > 0 && course.t < endMs) {
+        const step = Math.min(left, 8);
+        course.t = Math.min(endMs, course.t + step * rateAt(course.t));
+        left -= step;
+      }
       if (course.t >= endMs) course.playing = false;
       draw();
       if (course.playing) courseTimer = requestAnimationFrame(tick);
