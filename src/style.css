@@ -351,9 +351,16 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .sb-meter { display: block; height: 8px; margin-top: 4px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
 .sb-meter-fill { display: block; height: 100%; background: var(--link); border-radius: 0 4px 4px 0; }
 .sb-note { margin-top: 8px; }
-.sb-race-dim { opacity: .4; }
-.sb-race-focus .sb-race-line { stroke-width: 2.5; }
-.sb-race-label { font: 600 11px var(--font); fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.sb-race-buttons { display: flex; gap: 6px; }
+.sb-race-hit { fill: transparent; pointer-events: none; }
+.sb-race-hit:focus-visible { outline: none; stroke: var(--focus); stroke-width: 2; }
+.sb-race-dot-on { r: 5.5px; }
+.sb-callouts { position: absolute; inset: 0; pointer-events: none; }
+.sb-callout { position: absolute; display: flex; flex-direction: column; width: max-content; max-width: 11.5rem; padding: 3px 8px 4px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--series); border-radius: 8px; box-shadow: var(--shadow); line-height: 1.25; animation: sb-pop .18s ease-out; transition: opacity .5s; }
+.sb-callout-event { font-weight: 700; font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-callout-meta { color: var(--muted); font-size: .7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-leader { stroke: var(--series); stroke-width: 1.5; transition: opacity .5s; }
+.sb-callout-fade { opacity: 0; }
+@keyframes sb-pop { from { transform: scale(.85); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sb-callout { animation: none; } }
 .sb-tip-last { color: var(--muted); font-size: .76rem; margin: -1px 0 3px 18px; }
-.sb-legend-btn { font: inherit; color: var(--text); display: flex; align-items: center; gap: 6px; background: none; border: 1px solid transparent; border-radius: 999px; padding: 3px 9px 3px 7px; cursor: pointer; }
-.sb-legend-btn[aria-pressed="true"] { border-color: var(--series); background: var(--surface-2); font-weight: 700; }
