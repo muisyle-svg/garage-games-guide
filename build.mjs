@@ -370,16 +370,29 @@ function guidelinesPage(site, siteSections, events) {
 }
 
 // Live standings, filled in by scoreboard.js from scores.json (uploaded by the scorekeeper).
-function scoreboardPage(site) {
+// Each event's starting points and page come from the guide's own event files, so the
+// event comparison can score events that start at different points fairly.
+function scoreboardPage(site, events) {
   const base = '../';
+  const guide = events.map(e => ({ name: e.title, slug: e.slug, points: e.points ?? null }));
   const body = `
-<article class="scoreboard" data-scoreboard>
+<article class="scoreboard" data-scoreboard data-guide-events="${esc(JSON.stringify(guide))}">
   <h1>Scores</h1>
   <p class="sb-status" data-scoreboard-status aria-live="polite">Loading scores…</p>
   <section aria-labelledby="overall-h">
     <h2 id="overall-h">Leaderboard</h2>
     <p class="sb-help">Tap a name to see their scorecard. Exhibition runs are listed by points without a rank.</p>
     <div class="table-wrap" data-overall></div>
+  </section>
+  <section aria-labelledby="compare-h">
+    <h2 id="compare-h">Compare players</h2>
+    <p class="sb-help">Pick up to four players to compare event by event and see how their runs unfolded.</p>
+    <div data-compare></div>
+  </section>
+  <section aria-labelledby="difficulty-h">
+    <h2 id="difficulty-h">How the events compare</h2>
+    <p class="sb-help">Events start at different points, so they're compared by share of starting points. Pick how to rank them.</p>
+    <div data-difficulty></div>
   </section>
   <section aria-labelledby="event-boards-h">
     <h2 id="event-boards-h">Event leaderboards</h2>
@@ -445,7 +458,7 @@ async function main() {
 
   await writeFile('index.html', homePage(site, events));
   await writeFile('guidelines/index.html', guidelinesPage(site, siteSections, events));
-  await writeFile('scoreboard/index.html', scoreboardPage(site));
+  await writeFile('scoreboard/index.html', scoreboardPage(site, events));
   await writeFile('404.html', notFoundPage(site));
   // The How it works page moved from rules/ to guidelines/; send old links and bookmarks there.
   await writeFile('rules/index.html', '<!doctype html><meta charset="utf-8"><title>Moved</title><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0; url=../guidelines/"><link rel="canonical" href="../guidelines/"><a href="../guidelines/">How it works</a>');
