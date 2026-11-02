@@ -714,6 +714,7 @@
     const REPLAY_MS = 20000;
     const HOLD_MS = 1600;
     let playing = false;
+    const shown = new Map();   // series slot -> the last step Replay popped up
     const stop = () => {
       cancelAnimationFrame(raceTimer);
       playing = false;
@@ -726,6 +727,7 @@
       if (playing) { stop(); return; }
       cancelAnimationFrame(raceTimer);
       transient.clear();
+      shown.clear();
       if (reduceMotion) { clipRect.setAttribute('width', W); return; }
       playing = true;
       play.textContent = 'Stop';
@@ -741,8 +743,12 @@
           const reached = s.steps.filter(st => st.eventId && st.t <= t);
           const latest = reached[reached.length - 1];
           const cur = transient.get(s.slot);
-          if (latest && cur?.st !== latest) { transient.set(s.slot, { st: latest, shownAt: elapsed, fading: false }); changed = true; }
-          else if (cur && !cur.fading && elapsed - cur.shownAt > HOLD_MS) { cur.fading = true; changed = true; }
+          // Pop each event once: after its callout fades, wait for the player's next event.
+          if (latest && shown.get(s.slot) !== latest) {
+            shown.set(s.slot, latest);
+            transient.set(s.slot, { st: latest, shownAt: elapsed, fading: false });
+            changed = true;
+          } else if (cur && !cur.fading && elapsed - cur.shownAt > HOLD_MS) { cur.fading = true; changed = true; }
           else if (cur && cur.fading && elapsed - cur.shownAt > HOLD_MS + 500) { transient.delete(s.slot); changed = true; }
         }
         if (changed) drawCallouts();
