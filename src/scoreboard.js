@@ -186,7 +186,223 @@
     });
   }
 
-  const api = { buildEventBoards, scorecard, formatClock, comparables, compareEvents, raceSteps, eventStats, nameKey };
+  // ---------- course map ----------
+
+  // Where each event's name bubble sits on content/images/course.jpg (800 x 800 pixels).
+  // If that image changes, update these centers to match.
+  const COURSE = {
+    image: 'images/course.jpg',
+    size: 800,
+    radius: 40,
+    start: 'Paddle Peril',
+    bubbles: [
+      ['Four Hand', 79, 122], ['Row Darts III', 295, 130], ['Bocce the Moon', 691, 128],
+      ['Measure Up', 608, 216], ['Ring Toss', 471, 292], ['Wall-D', 751, 336],
+      ['Paddle Peril', 321, 343], ['Sort & Sweet', 106, 352], ['Chaos Heist', 616, 544],
+      ['Top Shelf Shot', 320, 560], ['Hook, Line, and Winner', 119, 572], ['Spice Slide', 436, 620],
+      ['Hammer Head', 597, 669],
+    ].map(([name, x, y]) => ({ name, key: nameKey(name), x, y })),
+  };
+
+  let courseGrid = null;   // grid cells covered by a bubble, shared by every route
+
+  // Small seeded random numbers, so a run's wavy paths look the same every time it's drawn.
+  function seededRandom(seedText) {
+    let h = 2166136261;
+    for (const ch of String(seedText)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+    return () => {
+      h += 0x6D2B79F5;
+      let t = h;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // Where a player sits on a bubble (on its rim, along the top, one spot per player) and
+  // where their finished/unfinished badge goes (along the bottom rim).
+  const SEAT_ANGLES = [-160, -115, -65, -20];
+  const BADGE_ANGLES = [135, 105, 75, 45];
+  const onRim = (b, deg, r = COURSE.radius) => ({ x: b.x + r * Math.cos(deg * Math.PI / 180), y: b.y + r * Math.sin(deg * Math.PI / 180) });
+
+  // Is every point of a path clear of every bubble (with a margin)?
+  function pathClear(points, margin) {
+    const lim = COURSE.radius + margin;
+    for (const p of points) {
+      if (p.x < 6 || p.y < 6 || p.x > COURSE.size - 6 || p.y > COURSE.size - 6) return false;
+      for (const b of COURSE.bubbles) if (Math.hypot(p.x - b.x, p.y - b.y) < lim) return false;
+    }
+    return true;
+  }
+  const lerpPts = (a, b, step = 4) => {
+    const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / step));
+    return Array.from({ length: n + 1 }, (_, i) => ({ x: a.x + (b.x - a.x) * i / n, y: a.y + (b.y - a.y) * i / n }));
+  };
+  const lineClear = (a, b, margin) => pathClear(lerpPts(a, b), margin);
+
+  // A walking route between two points that never crosses a bubble: a grid search around the
+  // bubbles (with a little random cost so routes vary), pulled tight, then smoothed into a
+  // curve with a gentle random wave. Each step falls back to a plainer route if the fancier
+  // one would clip a bubble.
+  function planPath(from, to, seed) {
+    const rand = seededRandom(seed);
+    const CELL = 10, N = Math.ceil(COURSE.size / CELL);
+    if (!courseGrid) {
+      courseGrid = new Uint8Array(N * N);
+      for (let gy = 0; gy < N; gy++) for (let gx = 0; gx < N; gx++) {
+        const cx = gx * CELL + CELL / 2, cy = gy * CELL + CELL / 2;
+        if (cx < 10 || cy < 10 || cx > COURSE.size - 10 || cy > COURSE.size - 10) courseGrid[gy * N + gx] = 1;
+        for (const b of COURSE.bubbles) if (Math.hypot(cx - b.x, cy - b.y) < COURSE.radius + 10) courseGrid[gy * N + gx] = 1;
+      }
+    }
+    const blocked = courseGrid.slice();
+    const noise = new Float32Array(N * N);
+    for (let i = 0; i < noise.length; i++) noise[i] = rand() * 0.8;
+    const cellOf = p => [Math.min(N - 1, Math.max(0, Math.floor(p.x / CELL))), Math.min(N - 1, Math.max(0, Math.floor(p.y / CELL)))];
+    const [sx, sy] = cellOf(from), [tx, ty] = cellOf(to);
+    const start = sy * N + sx, goal = ty * N + tx;
+    blocked[start] = 0; blocked[goal] = 0;
+    // A* over 8 neighbours, with a small binary heap for the open set.
+    const heap = [];
+    const push = (f, i) => {
+      heap.push([f, i]);
+      let k = heap.length - 1;
+      while (k > 0) { const pk = (k - 1) >> 1; if (heap[pk][0] <= heap[k][0]) break; [heap[pk], heap[k]] = [heap[k], heap[pk]]; k = pk; }
+    };
+    const pop = () => {
+      const top = heap[0], last = heap.pop();
+      if (heap.length) {
+        heap[0] = last;
+        let k = 0;
+        for (;;) {
+          const l = 2 * k + 1, r = l + 1;
+          let m = k;
+          if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
+          if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+          if (m === k) break;
+          [heap[m], heap[k]] = [heap[k], heap[m]];
+          k = m;
+        }
+      }
+      return top;
+    };
+    const g = new Float32Array(N * N).fill(Infinity);
+    const came = new Int32Array(N * N).fill(-1);
+    const closed = new Uint8Array(N * N);
+    g[start] = 0;
+    const h = i => Math.hypot((i % N) - tx, Math.floor(i / N) - ty);
+    push(h(start), start);
+    while (heap.length) {
+      const [, cur] = pop();
+      if (closed[cur]) continue;
+      closed[cur] = 1;
+      if (cur === goal) break;
+      const cx = cur % N, cy = Math.floor(cur / N);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
+        const ni = ny * N + nx;
+        if (blocked[ni] || closed[ni]) continue;
+        const cost = g[cur] + Math.hypot(dx, dy) * (1 + noise[ni]);
+        if (cost < g[ni]) { g[ni] = cost; came[ni] = cur; push(cost + h(ni), ni); }
+      }
+    }
+    let route;
+    if (came[goal] === -1 && start !== goal) route = [from, to];
+    else {
+      const cells = [];
+      for (let i = goal; i !== -1; i = came[i]) cells.push({ x: (i % N) * CELL + CELL / 2, y: Math.floor(i / N) * CELL + CELL / 2 });
+      cells.reverse();
+      cells[0] = from; cells[cells.length - 1] = to;
+      // Pull the route tight: from each point, jump to the furthest one in plain sight.
+      route = [cells[0]];
+      let i = 0;
+      while (i < cells.length - 1) {
+        let j = i + 1;
+        while (j + 1 < cells.length && lineClear(cells[i], cells[j + 1], 4)) j++;
+        route.push(cells[j]);
+        i = j;
+      }
+    }
+    const safe = route.flatMap((p, k) => (k ? lerpPts(route[k - 1], p).slice(1) : [p]));
+    // Bend each straight leg through a randomly nudged midpoint, then smooth and add a wave.
+    const curvy = amp => {
+      const pts = [route[0]];
+      for (let k = 1; k < route.length; k++) {
+        const a = route[k - 1], b = route[k];
+        const len = Math.hypot(b.x - a.x, b.y - a.y);
+        if (len > 60) {
+          const nx = -(b.y - a.y) / len, ny = (b.x - a.x) / len, off = (rand() * 2 - 1) * Math.min(40, len * 0.18) * amp;
+          pts.push({ x: (a.x + b.x) / 2 + nx * off, y: (a.y + b.y) / 2 + ny * off });
+        }
+        pts.push(b);
+      }
+      // Catmull-Rom through the points, sampled every few pixels.
+      const out = [];
+      for (let k = 0; k < pts.length - 1; k++) {
+        const p0 = pts[Math.max(0, k - 1)], p1 = pts[k], p2 = pts[k + 1], p3 = pts[Math.min(pts.length - 1, k + 2)];
+        const n = Math.max(2, Math.ceil(Math.hypot(p2.x - p1.x, p2.y - p1.y) / 4));
+        for (let s = 0; s < n; s++) {
+          const t = s / n, t2 = t * t, t3 = t2 * t;
+          out.push({
+            x: 0.5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
+            y: 0.5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3),
+          });
+        }
+      }
+      out.push(pts[pts.length - 1]);
+      // A wave across the direction of travel, fading in and out at the ends.
+      const waveAmp = (2 + rand() * 5) * amp, waveLen = 45 + rand() * 50, phase = rand() * Math.PI * 2;
+      let dist = 0;
+      const total = out.reduce((s, p, k) => s + (k ? Math.hypot(p.x - out[k - 1].x, p.y - out[k - 1].y) : 0), 0);
+      return out.map((p, k) => {
+        if (k) dist += Math.hypot(p.x - out[k - 1].x, p.y - out[k - 1].y);
+        const a = out[Math.max(0, k - 1)], b = out[Math.min(out.length - 1, k + 1)];
+        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        const fade = Math.min(1, dist / 30, (total - dist) / 30);
+        const w = Math.sin((dist / waveLen) * Math.PI * 2 + phase) * waveAmp * Math.max(0, fade);
+        return { x: p.x - (b.y - a.y) / len * w, y: p.y + (b.x - a.x) / len * w };
+      });
+    };
+    for (const amp of [1, 0.5, 0.2]) {
+      const pts = curvy(amp);
+      if (pathClear(pts.slice(1, -1), 2)) return pts;
+    }
+    return safe;
+  }
+
+  // A run as moves around the course: where the player is at each moment, and each
+  // event's state over time. Every button press is a visit: starting an event means the
+  // player is there; finishing one means they're there (perhaps having come back to it).
+  function courseTimeline(data, run) {
+    const names = new Map((data.events || []).map(e => [e.eventId, e]));
+    const bubbleFor = new Map(COURSE.bubbles.map(b => [b.key, b]));
+    const limitMs = (Number(run.durationLimitSeconds) || 300) * 1000;
+    const visits = [];
+    let bonus = null;
+    const events = [];
+    for (const r of run.events || []) {
+      const def = names.get(r.eventId);
+      if (!def) continue;
+      if (def.type === 'bonusRound') { bonus = { name: def.name, result: r }; continue; }
+      const bubble = bubbleFor.get(nameKey(def.name));
+      if (!bubble) continue;
+      const start = Number.isFinite(r.startElapsedMs) ? Math.min(r.startElapsedMs, limitMs) : null;
+      const finish = r.status === 'completed' ? (Number.isFinite(r.finishElapsedMs) ? Math.min(r.finishElapsedMs, limitMs) : limitMs) : null;
+      events.push({ eventId: r.eventId, name: def.name, bubble, start, finish, points: Number(r.points || 0),
+        durationMs: start !== null && finish !== null ? finish - start : null });
+      if (start !== null) visits.push({ t: start, bubble, eventId: r.eventId, kind: 'start' });
+      if (finish !== null) visits.push({ t: finish, bubble, eventId: r.eventId, kind: 'finish' });
+    }
+    visits.sort((a, b) => a.t - b.t || (a.kind === 'finish' ? -1 : 1));
+    const allDone = events.length > 0 && events.every(e => e.finish !== null) && (!bonus || bonus.result.status === 'completed' || bonus.result.status === 'pending');
+    const lastPress = Math.max(0, ...visits.map(v => v.t), bonus && Number.isFinite(bonus.result.finishElapsedMs) ? bonus.result.finishElapsedMs : 0);
+    const endMs = allDone ? Math.min(limitMs, lastPress) : limitMs;
+    return { visits, events, bonus, endMs, limitMs };
+  }
+
+  const api = { planPath, courseTimeline, COURSE, buildEventBoards, scorecard, formatClock, comparables, compareEvents, raceSteps, eventStats, nameKey };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
 
   // ---------- page ----------
@@ -471,6 +687,7 @@
     wrap.append(list);
 
     wrap.append(renderRace(data, slots));
+    wrap.append(renderCourse(data, slots));
     compareEl.replaceChildren(wrap);
   }
 
@@ -767,6 +984,354 @@
     box.append(legend);
     // Callouts need the chart's on-screen size, so draw them once it's in the page.
     requestAnimationFrame(drawCallouts);
+    return box;
+  }
+
+  // ---------- on the course ----------
+
+  // Plays the picked runs on the course map: each player is a dot that walks from event to
+  // event, with popups for results, badges for finished and unfinished events, and optional
+  // trails. Everything shown is worked out from the run time, so the slider can jump around.
+  const course = { t: 0, playing: false, speed: 10, trails: false };
+  let courseTimer = 0;
+  const coursePaths = new Map();   // "runId|segment" -> route, so routes stay put on redraw
+  const WALK_MS_PER_PX = 12;       // run time to walk one map pixel (about 4 s across the garage)
+
+  function buildCourseRun(data, slot, index, entry) {
+    const tl = courseTimeline(data, entry.run);
+    const startBubble = COURSE.bubbles.find(b => b.key === nameKey(COURSE.start)) || COURSE.bubbles[0];
+    const seatDeg = SEAT_ANGLES[index % SEAT_ANGLES.length];
+    const seat = b => onRim(b, seatDeg, COURSE.radius + 2);
+    const segments = [];
+    let at = startBubble, prevT = 0;
+    tl.visits.forEach((v, i) => {
+      if (v.bubble !== at) {
+        const key = `${entry.key}|${i}`;
+        if (!coursePaths.has(key)) {
+          const a = onRim(at, seatDeg, COURSE.radius + 16), b = onRim(v.bubble, seatDeg, COURSE.radius + 16);
+          coursePaths.set(key, [seat(at), ...planPath(a, b, key), seat(v.bubble)]);
+        }
+        const path = coursePaths.get(key);
+        const lengths = [0];
+        for (let k = 1; k < path.length; k++) lengths.push(lengths[k - 1] + Math.hypot(path[k].x - path[k - 1].x, path[k].y - path[k - 1].y));
+        const total = lengths[lengths.length - 1];
+        const walk = Math.min(total * WALK_MS_PER_PX, Math.max(0, v.t - prevT) * 0.9);
+        segments.push({ from: at, to: v.bubble, depart: v.t - walk, arrive: v.t, path, lengths, total });
+        at = v.bubble;
+      }
+      prevT = v.t;
+    });
+    // When a player walked away from an event they'd started but not finished.
+    for (const e of tl.events) {
+      e.leftAt = null;
+      if (e.start === null) continue;
+      const leave = segments.find(s => s.from === e.bubble && s.depart >= e.start && (e.finish === null || s.depart < e.finish));
+      if (leave) e.leftAt = leave.depart;
+    }
+    return { slot, index, entry, tl, startBubble, segments, seat };
+  }
+
+  function positionAt(pr, t) {
+    let here = pr.startBubble;
+    for (const s of pr.segments) {
+      if (t < s.depart) return { ...pr.seat(here), bubble: here, moving: false };
+      if (t < s.arrive) {
+        const f = s.arrive > s.depart ? (t - s.depart) / (s.arrive - s.depart) : 1;
+        const eased = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+        const d = eased * s.total;
+        let k = 1;
+        while (k < s.lengths.length - 1 && s.lengths[k] < d) k++;
+        const a = s.path[k - 1], b = s.path[k], seg = (s.lengths[k] - s.lengths[k - 1]) || 1;
+        const u = Math.min(1, Math.max(0, (d - s.lengths[k - 1]) / seg));
+        return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, bubble: null, moving: true, seg: s, dist: d };
+      }
+      here = s.to;
+    }
+    return { ...pr.seat(here), bubble: here, moving: false };
+  }
+
+  // The route walked so far, for the trail.
+  function trailAt(pr, t) {
+    const pts = [pr.seat(pr.startBubble)];
+    for (const s of pr.segments) {
+      if (t <= s.depart) break;
+      if (t >= s.arrive) { pts.push(...s.path); continue; }
+      const pos = positionAt(pr, t);
+      for (let k = 0; k < s.path.length && s.lengths[k] <= pos.dist; k++) pts.push(s.path[k]);
+      pts.push(pos);
+      break;
+    }
+    return pts;
+  }
+
+  function eventState(pr, e, t, pos) {
+    if (e.finish !== null && e.finish <= t) return 'done';
+    if (e.start !== null && e.start <= t) {
+      if (t >= pr.tl.endMs) return 'missed';
+      return pos.bubble === e.bubble ? 'active' : 'left';
+    }
+    return t >= pr.tl.endMs ? 'missed' : null;
+  }
+
+  function renderCourse(data, slots) {
+    cancelAnimationFrame(courseTimer);
+    const box = el('div', 'sb-course');
+    const head = el('div', 'sb-chart-head');
+    head.append(el('h3', '', 'On the course'));
+    const controls = el('div', 'sb-race-buttons');
+    const playBtn = el('button', 'sb-play');
+    playBtn.type = 'button';
+    const speed = el('select', 'sb-speed');
+    speed.setAttribute('aria-label', 'Playback speed');
+    for (const [v, text] of [[5, '5×'], [10, '10×'], [20, '20×']]) speed.append(new Option(text, v, false, v === course.speed));
+    controls.append(speed, playBtn);
+    head.append(controls);
+    box.append(head);
+    box.append(el('p', 'sb-help', 'Each run played on the course map, sped up, so longer stops show which events took a while. Everyone starts at Paddle Peril.'));
+
+    const runs = slots.map(({ slot, entry }, i) => buildCourseRun(data, slot, i, entry));
+    const firstNames = runs.map(r => r.entry.name.split(/\s+/)[0]);
+    const tagFor = (r, i) => firstNames.filter(n => n === firstNames[i]).length > 1
+      ? `${firstNames[i]}${r.entry.category === 'official' ? '' : ` (${(CATEGORY[r.entry.category] || r.entry.category)[0]})`}`
+      : firstNames[i];
+    const endMs = Math.max(...runs.map(r => r.tl.endMs));
+    course.t = Math.min(course.t, endMs);
+
+    const frame = el('div', 'sb-course-frame');
+    const img = el('img');
+    img.src = `${base}${COURSE.image}`;
+    img.alt = 'Overhead map of the course with each event in a bubble';
+    const svg = svgEl('svg', { viewBox: `0 0 ${COURSE.size} ${COURSE.size}`, class: 'sb-course-svg', 'aria-hidden': 'true' });
+    const trailG = svgEl('g', { class: 'sb-course-trails' });
+    const badgeG = svgEl('g');
+    const playerG = svgEl('g');
+    svg.append(trailG, badgeG, playerG);
+    const layer = el('div', 'sb-callouts');
+    frame.append(img, svg, layer);
+    box.append(frame);
+
+    const bar = el('div', 'sb-course-bar');
+    const scrub = el('input');
+    scrub.type = 'range';
+    scrub.min = 0; scrub.max = endMs; scrub.step = 100;
+    scrub.setAttribute('aria-label', 'Run time');
+    const clock = el('span', 'sb-course-clock');
+    const trailsLabel = el('label', 'sb-course-trails-toggle');
+    const trailsBox = el('input');
+    trailsBox.type = 'checkbox';
+    trailsBox.checked = course.trails;
+    trailsLabel.append(trailsBox, ' Trails');
+    bar.append(scrub, clock, trailsLabel);
+    box.append(bar);
+
+    const key = el('ul', 'sb-course-key');
+    runs.forEach((r, i) => {
+      const li = el('li', `sb-slot-${r.slot + 1}`);
+      li.append(el('span', 'sb-swatch sb-swatch-dot'), el('span', '', r.entry.label));
+      key.append(li);
+    });
+    for (const [cls, text] of [['done', 'Finished'], ['left', 'Left before finishing'], ['missed', 'Not finished']]) {
+      const li = el('li', 'sb-course-key-badge');
+      const s = svgEl('svg', { viewBox: '-10 -10 20 20', width: 16, height: 16, 'aria-hidden': 'true' });
+      s.append(badgeShape(cls, 8));
+      li.append(s, el('span', '', text));
+      key.append(li);
+    }
+    box.append(key);
+
+    // Sizes in map units that come out the same on screen whatever the map's width.
+    let k = 1;
+    const px = n => n / k;
+
+    function badgeShape(state, r) {
+      const g = svgEl('g', { class: `sb-badge-${state}` });
+      g.append(svgEl('circle', { r, class: 'sb-badge-ring' }));
+      const s = r * 0.5;
+      if (state === 'done') g.append(svgEl('path', { d: `M${-s},0 L${-s * 0.25},${s * 0.75} L${s},${-s * 0.7}`, class: 'sb-badge-mark' }));
+      else if (state === 'missed') g.append(svgEl('path', { d: `M${-s},${-s} L${s},${s} M${s},${-s} L${-s},${s}`, class: 'sb-badge-mark' }));
+      else if (state === 'left') g.append(svgEl('path', { d: `M${-s * 0.4},${-s} V${s} M${s * 0.4},${-s} V${s}`, class: 'sb-badge-mark' }));
+      else g.append(svgEl('circle', { r: r * 0.3, class: 'sb-badge-pip' }));
+      return g;
+    }
+
+    const badgeEls = new Map();
+    const popupEls = new Map();
+    const dots = runs.map((r, i) => {
+      const g = svgEl('g', { class: `sb-course-player sb-slot-${r.slot + 1}` });
+      const dot = svgEl('circle', { class: 'sb-course-dot' });
+      const tag = svgEl('text', { class: 'sb-course-tag', 'text-anchor': 'middle' });
+      tag.textContent = tagFor(r, i);
+      g.append(dot, tag);
+      playerG.append(g);
+      return { g, dot, tag };
+    });
+    const trails = runs.map(r => {
+      const pl = svgEl('polyline', { class: `sb-course-trail sb-slot-${r.slot + 1}` });
+      trailG.append(pl);
+      return pl;
+    });
+
+    function popupsAt(t) {
+      const hold = 2200 * course.speed;
+      const out = [];
+      for (const r of runs) {
+        const who = runs.length > 1 ? ` · ${r.entry.name.split(/\s+/)[0]}` : '';
+        for (const e of r.tl.events) {
+          if (e.finish !== null && t >= e.finish && t < e.finish + hold) {
+            const g = guideEvents.find(x => nameKey(x.name) === nameKey(e.name));
+            const share = Number.isFinite(g?.points) && g.points > 0 ? ` (${pct(e.points / g.points)})` : '';
+            out.push({ id: `${r.entry.key}|${e.eventId}|f`, r, anchor: e.bubble, title: `${e.name} ✓`, short: `${e.points}${share}`,
+              meta: `${e.points} pts${share}${e.durationMs !== null ? ` in ${formatClock(e.durationMs)}` : ''}${who}`, fade: t > e.finish + hold * 0.75 });
+          }
+          if (e.leftAt !== null && t >= e.leftAt && t < e.leftAt + hold) {
+            out.push({ id: `${r.entry.key}|${e.eventId}|l`, r, anchor: e.bubble, title: `${e.name}: left unfinished`, short: '',
+              meta: `after ${formatClock(e.leftAt - e.start)}${who}`, fade: t > e.leftAt + hold * 0.75 });
+          }
+        }
+        const bonus = r.tl.bonus?.result;
+        if (bonus && Number.isFinite(bonus.startElapsedMs) && t >= bonus.startElapsedMs && t < (bonus.status === 'completed' && Number.isFinite(bonus.finishElapsedMs) ? bonus.finishElapsedMs : r.tl.endMs)) {
+          out.push({ id: `${r.entry.key}|bonus|s`, r, anchor: null, title: r.tl.bonus.name, short: '', meta: `Bonus round${who}`, fade: false });
+        }
+        if (bonus?.status === 'completed' && Number.isFinite(bonus.finishElapsedMs) && t >= bonus.finishElapsedMs && t < bonus.finishElapsedMs + hold) {
+          out.push({ id: `${r.entry.key}|bonus|f`, r, anchor: null, title: `${r.tl.bonus.name} ✓`, short: `+${bonus.points}`, meta: `+${bonus.points} pts${who}`, fade: t > bonus.finishElapsedMs + hold * 0.75 });
+        }
+        if (t >= r.tl.endMs && t < r.tl.endMs + hold * 1.5) {
+          const done = r.tl.events.filter(e => e.finish !== null).length;
+          out.push({ id: `${r.entry.key}|end`, r, anchor: null, title: `Run over: ${r.entry.run.totalPoints ?? ''} pts`, short: '',
+            meta: `${done} of ${r.tl.events.length} events finished${who}`, fade: false });
+        }
+      }
+      return out;
+    }
+
+    function draw() {
+      const t = course.t;
+      const rect = frame.getBoundingClientRect();
+      k = (rect.width || COURSE.size) / COURSE.size;
+      const positions = runs.map(r => positionAt(r, t));
+
+      // Badges along the bottom rim of each bubble, one spot per player.
+      runs.forEach((r, i) => {
+        for (const e of r.tl.events) {
+          const state = eventState(r, e, t, positions[i]);
+          const id = `${r.entry.key}|${e.eventId}`;
+          const cur = badgeEls.get(id);
+          if (cur?.state === state) continue;
+          cur?.node.remove();
+          badgeEls.delete(id);
+          if (!state) continue;
+          const p = onRim(e.bubble, BADGE_ANGLES[i % BADGE_ANGLES.length], COURSE.radius + 1);
+          const node = svgEl('g', { class: `sb-slot-${r.slot + 1}`, transform: `translate(${p.x} ${p.y})` });
+          node.append(badgeShape(state, px(7)));
+          badgeG.append(node);
+          badgeEls.set(id, { state, node });
+        }
+      });
+
+      // Players, with their name above the dot.
+      runs.forEach((r, i) => {
+        const p = positions[i];
+        const d = dots[i];
+        d.dot.setAttribute('cx', p.x); d.dot.setAttribute('cy', p.y); d.dot.setAttribute('r', px(6));
+        d.dot.style.strokeWidth = px(2);
+        // The name sits outward from the bubble, so players sharing a bubble don't overlap,
+        // and is kept inside the map.
+        const deg = SEAT_ANGLES[i % SEAT_ANGLES.length] * Math.PI / 180;
+        const ux = p.moving ? 0 : Math.cos(deg), uy = p.moving ? -1 : Math.sin(deg);
+        const anchor = ux < -0.3 ? 'end' : ux > 0.3 ? 'start' : 'middle';
+        const width = px(d.tag.textContent.length * 6.6);
+        let tx = p.x + ux * px(10), ty = p.y + uy * px(10) + (uy > -0.5 ? px(4) : 0);
+        const left = anchor === 'end' ? tx - width : anchor === 'middle' ? tx - width / 2 : tx;
+        if (left < 4) tx += 4 - left;
+        if (left + width > COURSE.size - 4) tx -= left + width - (COURSE.size - 4);
+        d.tag.setAttribute('text-anchor', anchor);
+        d.tag.setAttribute('x', tx); d.tag.setAttribute('y', ty);
+        d.tag.style.fontSize = `${px(11)}px`;
+        d.tag.style.strokeWidth = `${px(3)}px`;
+      });
+
+      // Trails.
+      runs.forEach((r, i) => {
+        const pl = trails[i];
+        pl.style.display = course.trails ? '' : 'none';
+        pl.style.strokeWidth = px(2.5);
+        if (course.trails) pl.setAttribute('points', trailAt(r, t).map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+      });
+
+      // Popups beside the event (or the player), placed so they don't cover each other.
+      const wanted = popupsAt(t);
+      const W0 = rect.width || COURSE.size;
+      const keep = new Set(wanted.map(w => `${w.id}|${W0 < 520 ? 'c' : 'f'}`));
+      for (const [id, node] of popupEls) if (!keep.has(id)) { node.remove(); popupEls.delete(id); }
+      const placed = [];
+      const W = rect.width || COURSE.size, H = rect.height || COURSE.size;
+      // On a phone the popups shrink to one short line so they don't bury the map.
+      const compact = W < 520;
+      for (const w of wanted) {
+        const id = `${w.id}|${compact ? 'c' : 'f'}`;
+        w.id = id;
+        let c = popupEls.get(id);
+        if (!c) {
+          c = el('div', `sb-callout sb-slot-${w.r.slot + 1}${compact ? ' sb-callout-compact' : ''}`);
+          if (compact) c.append(el('span', 'sb-callout-event', w.short ? `${w.title} ${w.short}` : w.title));
+          else c.append(el('span', 'sb-callout-event', w.title), el('span', 'sb-callout-meta', w.meta));
+          layer.append(c);
+          popupEls.set(id, c);
+        }
+        c.classList.toggle('sb-callout-fade', !!w.fade);
+        const cw = c.offsetWidth, ch = c.offsetHeight;
+        const anchor = w.anchor || positions[runs.indexOf(w.r)];
+        const ax = anchor.x * k, ay = anchor.y * k, gap = (w.anchor ? COURSE.radius + 6 : 12) * k;
+        let spot = null;
+        for (let off = 0; off < 12 && !spot; off++) {
+          for (const [dx, dy] of [[0, -1], [0, 1], [1, 0], [-1, 0]]) {
+            const step = off * (ch + 4);
+            let left = dx > 0 ? ax + gap + (dy ? 0 : 0) : dx < 0 ? ax - gap - cw : ax - cw / 2;
+            let top = dy < 0 ? ay - gap - ch - step : dy > 0 ? ay + gap + step : ay - ch / 2 + (off % 2 ? 1 : -1) * Math.ceil(off / 2) * (ch + 4);
+            left = Math.max(0, Math.min(W - cw, left));
+            if (top < 0 || top + ch > H) continue;
+            const b = { left, top, right: left + cw, bottom: top + ch };
+            if (!placed.some(p => b.left < p.right + 3 && b.right > p.left - 3 && b.top < p.bottom + 3 && b.bottom > p.top - 3)) { spot = b; break; }
+          }
+        }
+        if (!spot) {
+          const left = Math.max(0, Math.min(W - cw, ax - cw / 2)), top = Math.max(0, Math.min(H - ch, ay - gap - ch));
+          spot = { left, top, right: left + cw, bottom: top + ch };
+        }
+        placed.push(spot);
+        c.style.left = `${spot.left}px`;
+        c.style.top = `${spot.top}px`;
+      }
+
+      scrub.value = String(Math.round(t));
+      clock.textContent = `${formatClock(t)} / ${formatClock(endMs)}`;
+      playBtn.textContent = course.playing ? 'Pause' : t >= endMs ? 'Replay' : t > 0 ? 'Play' : 'Play';
+    }
+
+    let lastFrame = 0;
+    const tick = now => {
+      if (!box.isConnected) { course.playing = false; return; }
+      const dt = lastFrame ? now - lastFrame : 0;
+      lastFrame = now;
+      course.t = Math.min(endMs, course.t + dt * course.speed);
+      if (course.t >= endMs) course.playing = false;
+      draw();
+      if (course.playing) courseTimer = requestAnimationFrame(tick);
+    };
+    const start = () => {
+      if (course.t >= endMs) course.t = 0;
+      course.playing = true;
+      lastFrame = 0;
+      cancelAnimationFrame(courseTimer);
+      courseTimer = requestAnimationFrame(tick);
+    };
+    const pause = () => { course.playing = false; cancelAnimationFrame(courseTimer); draw(); };
+    playBtn.addEventListener('click', () => (course.playing ? pause() : start()));
+    speed.addEventListener('change', () => { course.speed = Number(speed.value) || 10; draw(); });
+    scrub.addEventListener('input', () => { course.t = Number(scrub.value) || 0; draw(); });
+    trailsBox.addEventListener('change', () => { course.trails = trailsBox.checked; draw(); });
+    img.addEventListener('load', draw);
+    requestAnimationFrame(() => { draw(); if (course.playing) start(); });
     return box;
   }
 
