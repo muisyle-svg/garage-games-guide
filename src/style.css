@@ -239,6 +239,38 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; scroll-behavior: auto !important; }
 }
+/* Scores page */
+.scoreboard { max-width: 760px; margin: 0 auto; }
+.scoreboard h2 { margin: 26px 0 6px; text-transform: uppercase; }
+.sb-status { margin: 0 0 8px; color: var(--muted); font-size: .95rem; min-height: 1.5em; }
+.sb-help { margin: 0 0 10px; color: var(--muted); font-size: .9rem; }
+.sb-empty { background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); padding: 18px 16px; color: var(--muted); margin: 0; }
+.sb-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.sb-table th, .sb-table td { padding: 9px 8px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.sb-table thead th { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.sb-table .sb-num { text-align: right; white-space: nowrap; }
+.sb-table .sb-rank { width: 3.2rem; font-weight: 800; white-space: nowrap; }
+.sb-points { font-weight: 800; }
+.sb-overall { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); border-collapse: separate; border-spacing: 0; overflow: hidden; }
+.sb-overall tbody tr:last-child > * { border-bottom: 0; }
+.sb-overall .sb-row:nth-child(-n+4) .sb-rank { color: var(--link); }
+.sb-group th { background: var(--surface-2); font: 800 .8rem var(--font-display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.sb-expand { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; text-align: left; cursor: pointer; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.sb-expand .sb-name { text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+.sb-expand::after { content: ""; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); margin: -3px 0 0 2px; transition: transform .15s; }
+.sb-expand[aria-expanded="true"]::after { transform: rotate(-135deg); margin-top: 3px; }
+.sb-name { font-weight: 600; }
+.sb-badge { display: inline-block; font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+.sb-playoff { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.sb-detail > td { background: var(--surface-2); padding: 4px 10px 10px; }
+.sb-card { font-size: .92rem; }
+.sb-card th, .sb-card td { padding: 6px 6px; }
+.sb-card tfoot th, .sb-card tfoot td { font-weight: 800; border-bottom: 0; }
+.sb-dnf td { color: var(--muted); }
+.sb-event-name { flex: 1 1 auto; min-width: 0; font: 800 1.05rem/1.2 var(--font-display); text-transform: uppercase; }
+.sb-leader { flex: 0 1 auto; margin-right: 6px; color: var(--muted); font-size: .88rem; text-align: right; }
+.sb-event .guideline-body { padding: 0 8px 6px; overflow-x: auto; }
+
 @media print {
   .topbar, .section-tools, .pager, .footer, .slide-controls { display: none; }
   .guideline-section { break-inside: avoid; }
@@ -246,5 +278,7 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 }
 @media (max-width: 420px) {
   .brand { font-size: .92rem; }
-  .topbar nav a { padding: 8px 8px; white-space: nowrap; font-size: .9rem; }
+  .topbar nav a { padding: 8px 6px; white-space: nowrap; font-size: .88rem; }
+  .topbar ul { gap: 2px; }
+  .brand-mark, .brand-year { display: none; }
 }

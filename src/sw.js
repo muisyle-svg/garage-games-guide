@@ -19,6 +19,8 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  // Live scores always come from the network.
+  if (new URL(req.url).pathname.endsWith('/scores.json')) return;
 
   // Pages: try the network first so edits show up, fall back to the saved copy offline.
   if (req.mode === 'navigate') {
