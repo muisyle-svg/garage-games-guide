@@ -222,7 +222,7 @@
   // Where a player sits on a bubble (on its rim, along the top, one spot per player) and
   // where their finished/unfinished badge goes (along the bottom rim).
   const SEAT_ANGLES = [-160, -115, -65, -20];
-  const BADGE_ANGLES = [135, 105, 75, 45];
+  const BADGE_ANGLES = [150, 110, 70, 30];
   const onRim = (b, deg, r = COURSE.radius) => ({ x: b.x + r * Math.cos(deg * Math.PI / 180), y: b.y + r * Math.sin(deg * Math.PI / 180) });
 
   // Is every point of a path clear of every bubble (with a margin)?
@@ -995,21 +995,24 @@
   const course = { t: 0, playing: false, speed: 10, trails: false };
   let courseTimer = 0;
   const coursePaths = new Map();   // "runId|segment" -> route, so routes stay put on redraw
-  const WALK_MS_PER_PX = 12;       // run time to walk one map pixel (about 4 s across the garage)
+  const WALK_MS_PER_PX = 12;
+  // On-screen sizes (pixels) of the player dots and the finished/unfinished badges.
+  const DOT_PX = { wide: 52, narrow: 30 }, BADGE_PX = { wide: 14, narrow: 9 };
+  let courseSeat = 30;             // how far outside a bubble's rim players wait, in map units       // run time to walk one map pixel (about 4 s across the garage)
 
   function buildCourseRun(data, slot, index, entry) {
     const tl = courseTimeline(data, entry.run);
     const startBubble = COURSE.bubbles.find(b => b.key === nameKey(COURSE.start)) || COURSE.bubbles[0];
     const seatDeg = SEAT_ANGLES[index % SEAT_ANGLES.length];
     // Players wait just outside the bubble's rim, so their big dots don't cover the name.
-    const seat = b => onRim(b, seatDeg, COURSE.radius + 12);
+    const seat = b => onRim(b, seatDeg, COURSE.radius + courseSeat);
     const segments = [];
     let at = startBubble, prevT = 0;
     tl.visits.forEach((v, i) => {
       if (v.bubble !== at) {
-        const key = `${entry.key}|${i}`;
+        const key = `${entry.key}|${i}|${courseSeat}`;
         if (!coursePaths.has(key)) {
-          const a = onRim(at, seatDeg, COURSE.radius + 22), b = onRim(v.bubble, seatDeg, COURSE.radius + 22);
+          const a = onRim(at, seatDeg, COURSE.radius + courseSeat + 8), b = onRim(v.bubble, seatDeg, COURSE.radius + courseSeat + 8);
           coursePaths.set(key, [seat(at), ...planPath(a, b, key), seat(v.bubble)]);
         }
         const path = coursePaths.get(key);
@@ -1090,6 +1093,10 @@
     box.append(head);
     box.append(el('p', 'sb-help', 'Each run played on the course map, sped up, so longer stops show which events took a while. Everyone starts at Paddle Peril.'));
 
+    // Players wait just outside the rim, far enough out that their dots clear the bubble.
+    const mapWidth = Math.max(200, (compareEl.clientWidth || COURSE.size) - 30);
+    const narrow = mapWidth < 520;
+    courseSeat = Math.round((narrow ? DOT_PX.narrow : DOT_PX.wide) / 2 / (Math.min(mapWidth, 900) / COURSE.size)) + 2;
     const runs = slots.map(({ slot, entry }, i) => buildCourseRun(data, slot, i, entry));
     const firstNames = runs.map(r => r.entry.name.split(/\s+/)[0]);
     const tagFor = (r, i) => firstNames.filter(n => n === firstNames[i]).length > 1
@@ -1146,6 +1153,8 @@
 
     function badgeShape(state, r) {
       const g = svgEl('g', { class: `sb-badge-${state}` });
+      g.style.setProperty('--badge-stroke', `${r * 0.2}px`);
+      g.style.setProperty('--badge-mark', `${r * 0.27}px`);
       g.append(svgEl('circle', { r, class: 'sb-badge-ring' }));
       const s = r * 0.5;
       if (state === 'done') g.append(svgEl('path', { d: `M${-s},0 L${-s * 0.25},${s * 0.75} L${s},${-s * 0.7}`, class: 'sb-badge-mark' }));
@@ -1212,6 +1221,7 @@
       const rect = frame.getBoundingClientRect();
       k = (rect.width || COURSE.size) / COURSE.size;
       const positions = runs.map(r => positionAt(r, t));
+      const compactMap = (rect.width || COURSE.size) < 520;
 
       // Badges along the bottom rim of each bubble, one spot per player.
       runs.forEach((r, i) => {
@@ -1223,37 +1233,38 @@
           cur?.node.remove();
           badgeEls.delete(id);
           if (!state) continue;
-          const p = onRim(e.bubble, BADGE_ANGLES[i % BADGE_ANGLES.length], COURSE.radius + 1);
+          // Badges straddle the lower rim, sitting mostly outside so the event name stays readable.
+          const p = onRim(e.bubble, BADGE_ANGLES[i % BADGE_ANGLES.length], COURSE.radius + px(compactMap ? BADGE_PX.narrow : BADGE_PX.wide) * 0.6);
           const node = svgEl('g', { class: `sb-slot-${r.slot + 1}`, transform: `translate(${p.x} ${p.y})` });
-          node.append(badgeShape(state, px(7)));
+          node.append(badgeShape(state, px(compactMap ? BADGE_PX.narrow : BADGE_PX.wide)));
           badgeG.append(node);
           badgeEls.set(id, { state, node });
         }
       });
 
       // Players: a big dot with their initial, and their name beside it.
-      const compactMap = (rect.width || COURSE.size) < 520;
       runs.forEach((r, i) => {
         const p = positions[i];
         const d = dots[i];
-        d.dot.setAttribute('cx', p.x); d.dot.setAttribute('cy', p.y); d.dot.setAttribute('r', px(compactMap ? 9 : 13));
-        d.dot.style.strokeWidth = px(3);
-        d.initial.setAttribute('x', p.x); d.initial.setAttribute('y', p.y + px(compactMap ? 4 : 5.5));
-        d.initial.style.fontSize = `${px(compactMap ? 11 : 15)}px`;
+        d.dot.setAttribute('cx', p.x); d.dot.setAttribute('cy', p.y); const dotR = (compactMap ? DOT_PX.narrow : DOT_PX.wide) / 2;
+        d.dot.setAttribute('r', px(dotR));
+        d.dot.style.strokeWidth = px(compactMap ? 3 : 4);
+        d.initial.setAttribute('x', p.x); d.initial.setAttribute('y', p.y + px(dotR * 0.38));
+        d.initial.style.fontSize = `${px(dotR * 1.1)}px`;
         // The name sits outward from the bubble, so players sharing a bubble don't overlap,
         // and is kept inside the map.
         const deg = SEAT_ANGLES[i % SEAT_ANGLES.length] * Math.PI / 180;
         const ux = p.moving ? 0 : Math.cos(deg), uy = p.moving ? -1 : Math.sin(deg);
         const anchor = ux < -0.3 ? 'end' : ux > 0.3 ? 'start' : 'middle';
-        const width = px(d.tag.textContent.length * (compactMap ? 7.2 : 8.4));
-        const gap = compactMap ? 13 : 18;
+        const width = px(d.tag.textContent.length * (compactMap ? 7.2 : 9.6));
+        const gap = dotR + 6;
         let tx = p.x + ux * px(gap), ty = p.y + uy * px(gap) + (uy > -0.5 ? px(5) : 0);
         const left = anchor === 'end' ? tx - width : anchor === 'middle' ? tx - width / 2 : tx;
         if (left < 4) tx += 4 - left;
         if (left + width > COURSE.size - 4) tx -= left + width - (COURSE.size - 4);
         d.tag.setAttribute('text-anchor', anchor);
         d.tag.setAttribute('x', tx); d.tag.setAttribute('y', ty);
-        d.tag.style.fontSize = `${px(compactMap ? 12 : 14)}px`;
+        d.tag.style.fontSize = `${px(compactMap ? 12 : 16)}px`;
         d.tag.style.strokeWidth = `${px(4)}px`;
       });
 
@@ -1270,7 +1281,9 @@
       const W0 = rect.width || COURSE.size;
       const keep = new Set(wanted.map(w => `${w.id}|${W0 < 520 ? 'c' : 'f'}`));
       for (const [id, node] of popupEls) if (!keep.has(id)) { node.remove(); popupEls.delete(id); }
-      const placed = [];
+      // Popups steer clear of the player dots as well as each other.
+      const dotHalf = (compactMap ? DOT_PX.narrow : DOT_PX.wide) / 2;
+      const placed = positions.map(p => ({ left: p.x * k - dotHalf, top: p.y * k - dotHalf, right: p.x * k + dotHalf, bottom: p.y * k + dotHalf }));
       const W = rect.width || COURSE.size, H = rect.height || COURSE.size;
       // On a phone the popups shrink to one short line so they don't bury the map.
       const compact = W < 520;

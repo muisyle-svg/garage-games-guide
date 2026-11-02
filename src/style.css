@@ -374,12 +374,12 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 .sb-course-trail { fill: none; stroke: var(--series); stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
 .sb-course-dot { fill: var(--series); stroke: #fff; }
 .sb-course-tag { font-family: var(--font); font-weight: 800; fill: #1f1d19; paint-order: stroke; stroke: #fff; stroke-linejoin: round; }
-.sb-badge-ring { fill: var(--series); stroke: #fff; stroke-width: 1.5; }
-.sb-badge-mark { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.sb-badge-left .sb-badge-ring, .sb-badge-missed .sb-badge-ring { fill: #fff; stroke: var(--series); stroke-width: 2.5; stroke-dasharray: 3 2; }
+.sb-badge-ring { fill: var(--series); stroke: #fff; stroke-width: var(--badge-stroke, 1.5px); }
+.sb-badge-mark { fill: none; stroke: #fff; stroke-width: var(--badge-mark, 2px); stroke-linecap: round; stroke-linejoin: round; }
+.sb-badge-left .sb-badge-ring, .sb-badge-missed .sb-badge-ring { fill: #fff; stroke: var(--series); stroke-width: calc(var(--badge-stroke, 1.5px) * 1.5); stroke-dasharray: calc(var(--badge-stroke, 1.5px) * 2.5) calc(var(--badge-stroke, 1.5px) * 1.5); }
 .sb-badge-left .sb-badge-mark, .sb-badge-missed .sb-badge-mark { stroke: var(--series); }
 .sb-badge-missed .sb-badge-ring { stroke-dasharray: none; }
-.sb-badge-active .sb-badge-ring { fill: #fff; stroke: var(--series); stroke-width: 2.5; }
+.sb-badge-active .sb-badge-ring { fill: #fff; stroke: var(--series); stroke-width: calc(var(--badge-stroke, 1.5px) * 1.5); }
 .sb-badge-pip { fill: var(--series); }
 .sb-course-key .sb-course-key-badge { --series: var(--muted); }
 .sb-course-bar { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
