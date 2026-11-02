@@ -241,9 +241,9 @@
   const lineClear = (a, b, margin) => pathClear(lerpPts(a, b), margin);
 
   // A walking route between two points that never crosses a bubble: a grid search around the
-  // bubbles (with a little random cost so routes vary), pulled tight, then smoothed into a
-  // curve with a gentle random wave. Each step falls back to a plainer route if the fancier
-  // one would clip a bubble.
+  // bubbles (with a little random cost so routes vary), pulled tight to at most three straight
+  // legs, then smoothed into a gentle curve. Falls back to the straight legs if a curve would
+  // clip a bubble.
   function planPath(from, to, seed) {
     const rand = seededRandom(seed);
     const CELL = 10, N = Math.ceil(COURSE.size / CELL);
@@ -308,13 +308,14 @@
         if (cost < g[ni]) { g[ni] = cost; came[ni] = cur; push(cost + h(ni), ni); }
       }
     }
-    let route;
+    let route, cellsForTrim = null;
     if (came[goal] === -1 && start !== goal) route = [from, to];
     else {
       const cells = [];
       for (let i = goal; i !== -1; i = came[i]) cells.push({ x: (i % N) * CELL + CELL / 2, y: Math.floor(i / N) * CELL + CELL / 2 });
       cells.reverse();
       cells[0] = from; cells[cells.length - 1] = to;
+      cellsForTrim = cells;
       // Pull the route tight: from each point, jump to the furthest one in plain sight.
       route = [cells[0]];
       let i = 0;
@@ -325,48 +326,57 @@
         i = j;
       }
     }
-    const safe = route.flatMap((p, k) => (k ? lerpPts(route[k - 1], p).slice(1) : [p]));
-    // Bend each straight leg through a randomly nudged midpoint, then smooth and add a wave.
-    const curvy = amp => {
-      const pts = [route[0]];
-      for (let k = 1; k < route.length; k++) {
-        const a = route[k - 1], b = route[k];
-        const len = Math.hypot(b.x - a.x, b.y - a.y);
-        if (len > 60) {
-          const nx = -(b.y - a.y) / len, ny = (b.x - a.x) / len, off = (rand() * 2 - 1) * Math.min(40, len * 0.18) * amp;
-          pts.push({ x: (a.x + b.x) / 2 + nx * off, y: (a.y + b.y) / 2 + ny * off });
+    // At most two turning points (three legs): if the tightened route needs more, look for
+    // two of its grid points that still connect in three clear straight legs.
+    if (route.length > 4 && cellsForTrim) {
+      const c = cellsForTrim, step = Math.max(1, Math.floor(c.length / 24));
+      let best = null;
+      for (let i = step; i < c.length - 1 && !best; i += step) {
+        if (!lineClear(from, c[i], 4)) continue;
+        for (let j = c.length - 1 - step; j > i; j -= step) {
+          if (lineClear(c[i], c[j], 4) && lineClear(c[j], to, 4)) { best = [from, c[i], c[j], to]; break; }
         }
-        pts.push(b);
       }
-      // Catmull-Rom through the points, sampled every few pixels.
+      if (best) route = best;
+    }
+    const safe = route.flatMap((p, k) => (k ? lerpPts(route[k - 1], p).slice(1) : [p]));
+    // Smooth the legs into gentle curves: a single leg gets one random bow; two or three legs
+    // become one flowing curve through their turning points. No wiggles.
+    const smooth = amp => {
+      let pts = route;
+      if (route.length === 2) {
+        const [a, b] = route;
+        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        const off = (rand() < 0.5 ? -1 : 1) * (0.08 + rand() * 0.14) * len * amp;
+        pts = [a, { x: (a.x + b.x) / 2 - (b.y - a.y) / len * off, y: (a.y + b.y) / 2 + (b.x - a.x) / len * off }, b];
+        // A quadratic curve through the bowed midpoint.
+        const out = [];
+        const n = Math.max(8, Math.ceil(len / 4));
+        const cx = 2 * pts[1].x - (a.x + b.x) / 2, cy = 2 * pts[1].y - (a.y + b.y) / 2;
+        for (let i = 0; i <= n; i++) {
+          const t = i / n, u = 1 - t;
+          out.push({ x: u * u * a.x + 2 * u * t * cx + t * t * b.x, y: u * u * a.y + 2 * u * t * cy + t * t * b.y });
+        }
+        return out;
+      }
+      // Catmull-Rom through the turning points, with the tangents eased by amp.
       const out = [];
       for (let k = 0; k < pts.length - 1; k++) {
         const p0 = pts[Math.max(0, k - 1)], p1 = pts[k], p2 = pts[k + 1], p3 = pts[Math.min(pts.length - 1, k + 2)];
-        const n = Math.max(2, Math.ceil(Math.hypot(p2.x - p1.x, p2.y - p1.y) / 4));
-        for (let s = 0; s < n; s++) {
-          const t = s / n, t2 = t * t, t3 = t2 * t;
-          out.push({
-            x: 0.5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
-            y: 0.5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3),
-          });
+        const t1 = { x: (p2.x - p0.x) * 0.5 * amp, y: (p2.y - p0.y) * 0.5 * amp };
+        const t2 = { x: (p3.x - p1.x) * 0.5 * amp, y: (p3.y - p1.y) * 0.5 * amp };
+        const n = Math.max(4, Math.ceil(Math.hypot(p2.x - p1.x, p2.y - p1.y) / 4));
+        for (let i = 0; i < n; i++) {
+          const t = i / n, t2s = t * t, t3 = t2s * t;
+          const h1 = 2 * t3 - 3 * t2s + 1, h2 = -2 * t3 + 3 * t2s, h3 = t3 - 2 * t2s + t, h4 = t3 - t2s;
+          out.push({ x: h1 * p1.x + h2 * p2.x + h3 * t1.x + h4 * t2.x, y: h1 * p1.y + h2 * p2.y + h3 * t1.y + h4 * t2.y });
         }
       }
       out.push(pts[pts.length - 1]);
-      // A wave across the direction of travel, fading in and out at the ends.
-      const waveAmp = (2 + rand() * 5) * amp, waveLen = 45 + rand() * 50, phase = rand() * Math.PI * 2;
-      let dist = 0;
-      const total = out.reduce((s, p, k) => s + (k ? Math.hypot(p.x - out[k - 1].x, p.y - out[k - 1].y) : 0), 0);
-      return out.map((p, k) => {
-        if (k) dist += Math.hypot(p.x - out[k - 1].x, p.y - out[k - 1].y);
-        const a = out[Math.max(0, k - 1)], b = out[Math.min(out.length - 1, k + 1)];
-        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-        const fade = Math.min(1, dist / 30, (total - dist) / 30);
-        const w = Math.sin((dist / waveLen) * Math.PI * 2 + phase) * waveAmp * Math.max(0, fade);
-        return { x: p.x - (b.y - a.y) / len * w, y: p.y + (b.x - a.x) / len * w };
-      });
+      return out;
     };
-    for (const amp of [1, 0.5, 0.2]) {
-      const pts = curvy(amp);
+    for (const amp of [1, 0.6, 0.3]) {
+      const pts = smooth(amp);
       if (pathClear(pts.slice(1, -1), 2)) return pts;
     }
     return safe;
@@ -1091,7 +1101,7 @@
     controls.append(speed, playBtn);
     head.append(controls);
     box.append(head);
-    box.append(el('p', 'sb-help', 'Each run played on the course map, sped up, so longer stops show which events took a while. Everyone starts at Paddle Peril.'));
+    box.append(el('p', 'sb-help', 'Each run played on the course map. Time at events is sped up, so longer stops show which events took a while; walks between events play at an easy-to-follow pace. Everyone starts at Paddle Peril.'));
 
     // Players wait just outside the rim, far enough out that their dots clear the bubble.
     const mapWidth = Math.max(200, (compareEl.clientWidth || COURSE.size) - 30);
@@ -1104,6 +1114,28 @@
       : firstNames[i];
     const endMs = Math.max(...runs.map(r => r.tl.endMs));
     course.t = Math.min(course.t, endMs);
+
+    // Walking between events is played at a steady pace whatever the speed setting: while
+    // anyone is on the move, playback slows so each walk takes about half a second to a
+    // second on screen (longer walks a little longer). Time spent at events still plays at
+    // the chosen speed.
+    const walks = runs.flatMap(r => r.segments)
+      .filter(s => s.arrive > s.depart)
+      .map(s => ({ from: s.depart, to: s.arrive, realMs: Math.max(500, Math.min(1000, s.total * 2.4)) }));
+    const cuts = [...new Set([0, endMs, ...walks.flatMap(w => [w.from, w.to])])].sort((a, b) => a - b);
+    const spans = [];
+    for (let i = 0; i < cuts.length - 1; i++) {
+      const a = cuts[i], b = cuts[i + 1];
+      // The slowest any walk in this stretch needs (run ms per screen ms).
+      let need = Infinity;
+      for (const w of walks) if (w.from <= a && w.to >= b) need = Math.min(need, (w.to - w.from) / w.realMs);
+      spans.push({ a, b, need });
+    }
+    const rateAt = t => {
+      let lo = 0, hi = spans.length - 1;
+      while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (spans[mid].a <= t) lo = mid; else hi = mid - 1; }
+      return Math.max(0.5, Math.min(course.speed, spans[lo]?.need ?? course.speed));
+    };
 
     const frame = el('div', 'sb-course-frame');
     const img = el('img');
@@ -1368,7 +1400,13 @@
       if (!box.isConnected) { course.playing = false; return; }
       const dt = lastFrame ? now - lastFrame : 0;
       lastFrame = now;
-      course.t = Math.min(endMs, course.t + dt * course.speed);
+      // Advance in small steps so the pace changes right where a walk starts or ends.
+      let left = Math.min(dt, 100);
+      while (left > 0 && course.t < endMs) {
+        const step = Math.min(left, 8);
+        course.t = Math.min(endMs, course.t + step * rateAt(course.t));
+        left -= step;
+      }
       if (course.t >= endMs) course.playing = false;
       draw();
       if (course.playing) courseTimer = requestAnimationFrame(tick);
