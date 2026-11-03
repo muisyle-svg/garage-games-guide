@@ -1,11 +1,11 @@
-// Generates the animated event illustrations in content/images/ (one SVG per event).
+// Generates the 2026 animated event illustrations in content/years/2026/images/ (one SVG per event).
 // Every scene shares the same garage backdrop, palette and yellow stick figure, so the set reads as one style.
-// Usage: node tools/animations.mjs
+// Usage: node tools/animations.mjs [year]   (default 2026; a new year can copy this file's scenes)
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'content', 'images');
+const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'content', 'years', process.argv[2] || '2026', 'images');
 
 const C = {
   wall: '#2b2925', wallLine: '#34312c', floor: '#3a362f', ink: '#1f1d19', yellow: '#f2b705',
@@ -633,4 +633,4 @@ await fs.mkdir(OUT, { recursive: true });
 for (const [slug, make] of Object.entries(scenes)) {
   await fs.writeFile(path.join(OUT, `${slug}.svg`), make());
 }
-console.log(`Wrote ${Object.keys(scenes).length} animations to content/images/`);
+console.log(`Wrote ${Object.keys(scenes).length} animations to content/years/${process.argv[2] || '2026'}/images/`);

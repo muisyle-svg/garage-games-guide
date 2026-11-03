@@ -31,10 +31,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # The live scores belong to the current year (current_year in content/settings.md).
+      # A year whose scores were saved into content/years/<year>/scores.json keeps those instead.
       - name: Add the live scores
         run: |
-          if git fetch --depth=1 origin live-scores && git cat-file -e FETCH_HEAD:scores.json; then
-            git show FETCH_HEAD:scores.json > dist/scores.json
+          YEAR=$(node build.mjs --live-year)
+          if [ -e "dist/$YEAR/scores.json" ]; then
+            echo "$YEAR has saved scores; live scores not used."
+          elif git fetch --depth=1 origin live-scores && git cat-file -e FETCH_HEAD:scores.json; then
+            git show FETCH_HEAD:scores.json > "dist/$YEAR/scores.json"
           else
             echo "No live scores yet."
           fi

@@ -1,0 +1,21 @@
+{
+  "image": "course.jpg",
+  "size": 800,
+  "radius": 40,
+  "start": "Paddle Peril",
+  "bubbles": [
+    ["Four Hand", 79, 122],
+    ["Row Darts III", 295, 130],
+    ["Bocce the Moon", 691, 128],
+    ["Measure Up", 608, 216],
+    ["Ring Toss", 471, 292],
+    ["Wall-D", 751, 336],
+    ["Paddle Peril", 321, 343],
+    ["Sort & Sweet", 106, 352],
+    ["Chaos Heist", 616, 544],
+    ["Top Shelf Shot", 320, 560],
+    ["Hook, Line, and Winner", 119, 572],
+    ["Spice Slide", 436, 620],
+    ["Hammer Head", 597, 669]
+  ]
+}
