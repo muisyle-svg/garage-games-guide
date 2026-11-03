@@ -502,7 +502,7 @@ function scoreboardPage(Y) {
 function surveyPage(Y) {
   const root = '../../', yb = '../';
   const { id, title, intro } = Y.survey;
-  const embed = `https://tally.so/embed/${id}?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1`;
+  const embed = `https://tally.so/embed/${id}?alignLeft=1&hideTitle=1&dynamicHeight=1`;
   const body = `
 <article class="survey">
   <h1>${esc(title)}</h1>
