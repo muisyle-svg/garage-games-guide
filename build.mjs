@@ -243,6 +243,7 @@ const link = (base, p) => base + (p === '' ? (EXPLICIT_INDEX ? 'index.html' : ''
 function samePageIn(Y, kind, slug) {
   if (kind === 'guidelines') return 'guidelines/';
   if (kind === 'scoreboard') return 'scoreboard/';
+  if (kind === 'survey') return Y.survey ? 'survey/' : '';
   if (kind === 'event') return Y.events.some(e => e.slug === slug) ? `events/${slug}/` : '';
   return '';
 }
@@ -291,7 +292,7 @@ ${scripts.map(s => `<script src="${root}${s}?v=${ASSET_VERSION}" defer></script>
     <li><a href="${link(yb, 'guidelines/')}"${kind === 'guidelines' ? ' aria-current="page"' : ''}>How it works</a></li>
     <li><a href="${link(yb, '')}#events"${kind === 'home' ? ' aria-current="page"' : ''}>Events</a></li>
     <li><a href="${link(yb, 'scoreboard/')}"${kind === 'scoreboard' ? ' aria-current="page"' : ''}>Scores</a></li>
-  </ul></nav>
+${Y.survey ? `    <li><a href="${link(yb, 'survey/')}"${kind === 'survey' ? ' aria-current="page"' : ''}>Survey</a></li>\n` : ''}  </ul></nav>
 </header>
 <main id="main" tabindex="-1">
 ${note}${body}
@@ -496,6 +497,23 @@ function scoreboardPage(Y) {
   return layout({ Y, root, yb, kind: 'scoreboard', title: 'Scores', description: `${Y.site.title} leaderboards.`, body, scripts: ['scoreboard.js'] });
 }
 
+// The year's feedback survey: a Tally form embedded in the page, set by `survey:` in the
+// year's site.md (the form id, or its tally.so link). Years without one have no Survey tab.
+function surveyPage(Y) {
+  const root = '../../', yb = '../';
+  const { id, title, intro } = Y.survey;
+  const embed = `https://tally.so/embed/${id}?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1`;
+  const body = `
+<article class="survey">
+  <h1>${esc(title)}</h1>
+  ${intro ? `<div class="survey-intro">${md(intro)}</div>` : ''}
+  <iframe class="survey-form" data-tally-src="${embed}" loading="lazy" width="100%" height="600" frameborder="0" marginheight="0" marginwidth="0" title="${esc(title)}"></iframe>
+  <p class="survey-fallback">Form not showing? <a href="https://tally.so/r/${id}" target="_blank" rel="noopener">Open the survey in a new tab</a>.</p>
+</article>
+<script>(function(){var w="https://tally.so/widgets/embed.js",v=function(){if(typeof Tally!=="undefined")Tally.loadEmbeds();else document.querySelectorAll("iframe[data-tally-src]:not([src])").forEach(function(e){e.src=e.dataset.tallySrc})};if(typeof Tally!=="undefined")v();else{var s=document.createElement("script");s.src=w;s.onload=v;s.onerror=v;document.body.appendChild(s)}})();</script>`;
+  return layout({ Y, root, yb, kind: 'survey', title, description: `${Y.site.title} feedback survey.`, body });
+}
+
 function notFoundPage() {
   // GitHub Pages serves 404.html at any URL depth, so relative links would break. A <base> tag
   // pointing at the site root (first path segment on *.github.io project sites) fixes them.
@@ -557,7 +575,16 @@ async function loadYear(year) {
   const events = await loadEvents(year);
   const courseFile = path.join(YEARS, String(year), 'course.json');
   const course = await exists(courseFile) ? JSON.parse(await fs.readFile(courseFile, 'utf8')) : null;
-  return { year, site, siteBody, siteSections, events, course, hidden: site.hidden === true };
+  return { year, site, siteBody, siteSections, events, course, survey: surveyOf(year, site), hidden: site.hidden === true };
+}
+
+// `survey:` in site.md: a Tally form id (EqKae4) or link (https://tally.so/r/EqKae4).
+// `survey_title` and `survey_intro` are optional.
+function surveyOf(year, site) {
+  if (!site.survey) return null;
+  const m = String(site.survey).trim().match(/^(?:https?:\/\/tally\.so\/(?:r|embed|forms)\/)?([A-Za-z0-9]+)\/?(?:[?#].*)?$/);
+  if (!m) throw new Error(`years/${year}/site.md: survey should be a Tally form id or tally.so link, got "${site.survey}"`);
+  return { id: m[1], title: site.survey_title || 'Survey', intro: site.survey_intro || '' };
 }
 
 async function main() {
@@ -595,6 +622,7 @@ async function main() {
     await writeFile(`${y}/index.html`, homePage(Y));
     await writeFile(`${y}/guidelines/index.html`, guidelinesPage(Y));
     await writeFile(`${y}/scoreboard/index.html`, scoreboardPage(Y));
+    if (Y.survey) await writeFile(`${y}/survey/index.html`, surveyPage(Y));
     for (const [i, e] of Y.events.entries()) {
       await writeFile(`${y}/events/${e.slug}/index.html`, eventPage(Y, e, Y.events[i - 1], Y.events[i + 1]));
     }
@@ -611,6 +639,9 @@ async function main() {
     ['rules/index.html', `${current}/guidelines/`],   // the old name of How it works
     ['scoreboard/index.html', `${current}/scoreboard/`],
   ]);
+  // /survey/ goes to the newest survey up to the current year.
+  const surveyed = years.filter(Y => Y.survey && Y.year <= current && !(Y.hidden && Y.year !== current)).pop();
+  if (surveyed) redirects.set('survey/index.html', `${surveyed.year}/survey/`);
   for (const Y of [byYear.get(current), ...[...years].reverse()]) {
     if (Y.year > current) continue;
     for (const e of Y.events) {
