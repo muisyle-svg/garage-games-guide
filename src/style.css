@@ -433,3 +433,8 @@ h2 { font-size: 1.35rem; font-weight: 800; }
 
 /* A player's encore (candy burst) draws over everything on the map. */
 .sb-course-encore { pointer-events: none; }
+
+/* ---------- Survey ---------- */
+.survey-intro p { margin-top: 0; }
+.survey-form { display: block; width: 100%; min-height: 400px; border: 0; margin: 8px 0 12px; }
+.survey-fallback { color: var(--muted); font-size: .9rem; }

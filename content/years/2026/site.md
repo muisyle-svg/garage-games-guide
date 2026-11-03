@@ -12,6 +12,9 @@ steps:
   - '**Press the button again when you have completed the event.** Its light turns green. Your score is recorded automatically.'
   - '**Finish events faster for more points!** You can leave any event and start a new one, but your clock keeps ticking.'
   - '**Clear all the events to trigger the bonus round.** Most points wins!'
+# The post-event survey (Tally form id or link). Remove these lines to hide the Survey tab.
+survey: EqKae4
+survey_intro: Thanks for playing! Tell us what worked, what didn't, and what you want to see next year.
 ---
 
 ## The course

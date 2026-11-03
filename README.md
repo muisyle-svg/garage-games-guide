@@ -87,6 +87,18 @@ The year picks which `images/` folder it writes to; new scenes for a new year ca
 
 An event can show a captioned photo slideshow under its animation. Wall-D uses `slideshow: discs` in its front matter, which reads the year's `slideshows/discs.md`: a `captions:` list paired in order with the photos in the year's `images/discs/` (sorted by file name). To change it, swap photos in that folder and keep the captions list in the same order. The build warns if the counts differ.
 
+## Survey
+
+A year can have a feedback survey on its own Survey tab (`/2026/survey/`). Set it in the year's `site.md` front matter:
+
+```markdown
+survey: EqKae4              # the Tally form id, or its link (https://tally.so/r/EqKae4)
+survey_title: Survey        # optional, the page heading
+survey_intro: Thanks for playing!   # optional, text above the form
+```
+
+The form is embedded from Tally, so it needs a connection and only shows once the form is published in Tally. A link under it opens the form in a new tab. A year without `survey:` has no Survey tab (a new year that starts `from: 2026` keeps 2026's survey unless it sets its own or `survey: ''`). `/survey/` goes to the current year's survey, or the newest earlier one.
+
 ## Live scores
 
 Each year's Scores page (`/2026/scoreboard/`) shows the scorekeeper's leaderboards: the overall leaderboard (tap a name for that run's scorecard) and one leaderboard per event. Below the leaderboard, **Compare players** lets visitors pick up to four runs (shareable as `?compare=` with the last six characters of each run id) for event-by-event bars and a run race chart, and **How the events compare** ranks events hardest first. Events start at different points, so that board compares shares of each event's starting points, taken from the `points` front matter of the matching event file (matched by name). **On the course** plays the picked runs on the year's course map: each player walks between event bubbles following the start and finish times in `scores.json`. The map image, bubble centers (in pixels on the image) and the starting event are in the year's `course.json`; update them if the course image changes. `src/scoreboard.js` draws it all from the year's `scores.json`, refreshing every 30 seconds.
