@@ -26,6 +26,13 @@
   addEventListener('hashchange', openTarget);
   openTarget();
 
+  // ---- Year picker: close it when tapping elsewhere or pressing Escape ----
+  const yearMenu = document.querySelector('.year-menu');
+  if (yearMenu) {
+    document.addEventListener('click', ev => { if (yearMenu.open && !yearMenu.contains(ev.target)) yearMenu.open = false; });
+    document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && yearMenu.open) { yearMenu.open = false; yearMenu.querySelector('summary').focus(); } });
+  }
+
   // ---- Photo slideshow ----
   for (const box of document.querySelectorAll('[data-slideshow]')) {
     const slides = JSON.parse(box.querySelector('[data-slides]').textContent);

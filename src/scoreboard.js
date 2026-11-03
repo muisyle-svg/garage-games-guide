@@ -188,21 +188,19 @@
 
   // ---------- course map ----------
 
-  // Where each event's name bubble sits on content/images/course.jpg (800 x 800 pixels).
-  // If that image changes, update these centers to match.
-  const COURSE = {
-    image: 'images/course.jpg',
-    size: 800,
-    radius: 40,
-    start: 'Paddle Peril',
-    bubbles: [
-      ['Four Hand', 79, 122], ['Row Darts III', 295, 130], ['Bocce the Moon', 691, 128],
-      ['Measure Up', 608, 216], ['Ring Toss', 471, 292], ['Wall-D', 751, 336],
-      ['Paddle Peril', 321, 343], ['Sort & Sweet', 106, 352], ['Chaos Heist', 616, 544],
-      ['Top Shelf Shot', 320, 560], ['Hook, Line, and Winner', 119, 572], ['Spice Slide', 436, 620],
-      ['Hammer Head', 597, 669],
-    ].map(([name, x, y]) => ({ name, key: nameKey(name), x, y })),
-  };
+  // Where each event's name bubble sits on the year's course map. Each year sets its own in
+  // content/years/<year>/course.json (the build puts it on the page); with none, the
+  // "On the course" animation is left out.
+  let COURSE = setCourse(null);
+  function setCourse(c) {
+    return {
+      image: c && c.image ? `images/${c.image}` : 'images/course.jpg',
+      size: (c && c.size) || 800,
+      radius: (c && c.radius) || 40,
+      start: (c && c.start) || '',
+      bubbles: ((c && c.bubbles) || []).map(([name, x, y]) => ({ name, key: nameKey(name), x, y })),
+    };
+  }
 
   let courseGrid = null;   // grid cells covered by a bubble, shared by every route
 
@@ -412,14 +410,16 @@
     return { visits, events, bonus, endMs, limitMs };
   }
 
-  const api = { planPath, courseTimeline, COURSE, buildEventBoards, scorecard, formatClock, comparables, compareEvents, raceSteps, eventStats, nameKey };
+  const api = { planPath, courseTimeline, get COURSE() { return COURSE; }, setCourse: c => { COURSE = setCourse(c); courseGrid = null; }, buildEventBoards, scorecard, formatClock, comparables, compareEvents, raceSteps, eventStats, nameKey };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
 
   // ---------- page ----------
 
   const root = document.querySelector('[data-scoreboard]');
   if (!root) return;
-  const base = document.body.dataset.base || './';
+  // This year's folder: its scores.json, event pages and course map.
+  const base = root.dataset.yearBase || document.body.dataset.base || './';
+  try { COURSE = setCourse(JSON.parse(root.dataset.course || 'null')); } catch { /* no course map */ }
   const statusEl = root.querySelector('[data-scoreboard-status]');
   const overallEl = root.querySelector('[data-overall]');
   const eventsEl = root.querySelector('[data-event-boards]');
@@ -697,7 +697,7 @@
     wrap.append(list);
 
     wrap.append(renderRace(data, slots));
-    wrap.append(renderCourse(data, slots));
+    if (COURSE.bubbles.length) wrap.append(renderCourse(data, slots));
     compareEl.replaceChildren(wrap);
   }
 
@@ -1226,7 +1226,7 @@
     controls.append(speed, playBtn);
     head.append(controls);
     box.append(head);
-    box.append(el('p', 'sb-help', 'Each run played on the course map. Time at events is sped up, so longer stops show which events took a while; walks between events play at an easy-to-follow pace. Everyone starts at Paddle Peril.'));
+    box.append(el('p', 'sb-help', `Each run played on the course map. Time at events is sped up, so longer stops show which events took a while; walks between events play at an easy-to-follow pace.${COURSE.start ? ` Everyone starts at ${COURSE.start}.` : ''}`));
 
     // Players wait just outside the rim, far enough out that their dots clear the bubble.
     const mapWidth = Math.max(200, (compareEl.clientWidth || COURSE.size) - 30);
